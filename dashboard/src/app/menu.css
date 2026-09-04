@@ -1,0 +1,38 @@
+html { scroll-behavior: smooth; scroll-padding-top: 95px; }
+
+.navbar { position: sticky; top: 0; z-index: 1000; gap: 28px; }
+.brand { color: var(--ink); text-decoration: none; white-space: nowrap; }
+.navLinks { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+.navLinks a { padding: 9px 12px; border-radius: 8px; color: #52615c; font-size: 13px; font-weight: 700; text-decoration: none; transition: .2s ease; }
+.navLinks a:hover { color: var(--green); background: #eef5f0; }
+.menuButton { display: none; width: auto; margin: 0; padding: 6px; border: 0; background: transparent; color: var(--ink); font-size: 24px; line-height: 1; }
+.predictButton { width: 100%; margin-top: 15px; padding: 12px; border: 0; border-radius: 10px; background: var(--green); color: #fff; font-weight: bold; cursor: pointer; }
+.predictButton:hover { background: #10563f; transform: translateY(-1px); }
+.predictButton:disabled { cursor: wait; opacity: .7; transform: none; }
+.riskMap { width: 100%; height: 360px; background: #dbe9df; z-index: 1; }
+.riskMap .leaflet-popup-content-wrapper { border-radius: 10px; font-family: Arial, sans-serif; }
+.riskMap .leaflet-popup-content { line-height: 1.6; }
+
+.about { display: grid; grid-template-columns: 1fr 1.3fr auto; align-items: center; gap: 40px; margin-top: 20px; padding: 30px; }
+.about h2 { margin-top: 8px; font-size: 24px; }
+.about p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.aboutFacts { display: flex; gap: 18px; }
+.aboutFacts span { min-width: 74px; color: var(--muted); font-size: 10px; font-weight: bold; text-transform: uppercase; }
+.aboutFacts b { display: block; margin-bottom: 4px; color: var(--green); font-size: 20px; }
+
+@media (max-width: 980px) {
+  .navbar .online { display: none; }
+  .about { grid-template-columns: 1fr 1fr; }
+  .aboutFacts { grid-column: 1 / -1; }
+}
+
+@media (max-width: 760px) {
+  .navbar { position: sticky; }
+  .menuButton { display: block; margin-left: auto; }
+  .navLinks { display: none; position: absolute; top: 64px; left: 20px; right: 20px; margin: 0; padding: 10px; flex-direction: column; align-items: stretch; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 16px 35px rgba(17, 35, 31, .14); }
+  .navLinks.open { display: flex; }
+  .navLinks a { padding: 13px 14px; }
+  .about { display: block; }
+  .about p { margin: 18px 0; }
+  .riskMap { height: 300px; }
+}
