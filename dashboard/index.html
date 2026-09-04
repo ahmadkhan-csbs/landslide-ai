@@ -36,6 +36,21 @@
       <div class="stat"><div class="num text-danger" id="high">-</div><div class="label">High Risk</div></div>
  <div class="stat"><div class="num text-success">91.1%</div><div class="label">Model Acc</div></div>
     </div>
+
+        <div class="state-tabs">
+      <button class="st-btn active" onclick="filterState('ALL', this)">All (45)</button>
+      <button class="st-btn" onclick="filterState('Assam', this)">Assam</button>
+      <button class="st-btn" onclick="filterState('Sikkim', this)">Sikkim</button>
+      <button class="st-btn" onclick="filterState('Meghalaya', this)">Meghalaya</button>
+      <button class="st-btn" onclick="filterState('Arunachal Pradesh', this)">Arunachal</button>
+      <button class="st-btn" onclick="filterState('Nagaland', this)">Nagaland</button>
+      <button class="st-btn" onclick="filterState('Manipur', this)">Manipur</button>
+      <button class="st-btn" onclick="filterState('Mizoram', this)">Mizoram</button>
+      <button class="st-btn" onclick="filterState('Tripura', this)">Tripura</button>
+    </div>
+
+
+
     <div class="mode-btns">
       <button class="reset-btn" onclick="map.setView([25.5, 92.5], 6)">
         <i class="fa-solid fa-rotate-left"></i> Reset Map View

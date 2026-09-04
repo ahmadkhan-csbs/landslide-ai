@@ -101,3 +101,14 @@ header .live { background: #ef4444; padding: 5px 14px; border-radius: 20px;-size
 
 /* ===== TERRAIN LINE (alert cards) ===== */
 .terrain-line { margin-top: 6px; font-size: 11px; color: #94a3b8; }
+
+
+/* ===== STATE TABS ===== */
+.state-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.st-btn { background: #334155; color: #cbd5e1; border: none; padding: 5px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; transition: all .2s; }
+.st-btn.active { background: #f59e0b; color: #0f172a; font-weight: bold; }
+.st-btn:hover { background: #475569; }
+.st-btn.active:hover { background: #fbbf24; }
+
+/* ===== REASON LINE ===== */
+.reason-line { margin-top: 5px; font-size: 10px; color: #f87171; }

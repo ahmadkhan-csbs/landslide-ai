@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model = joblib.load(os.path.join(BASE_DIR, "..", "ml_model", "landslide_model_v2.pkl"))
 
 # Terrain data (elevation + slope of 8 NER cities)
-terrain_df = pd.read_csv(os.path.join(BASE_DIR, "..", "data", "ner_terrain.csv"))
+terrain_df = pd.read_csv(os.path.join(BASE_DIR, "..", "data", "ner_terrain_v2.csv"))
 
 # Seasonal fallback rainfall (mm) — sirf tab use hoga jab live API fail ho
 RAINFALL = {1: 10, 2: 15, 3: 30, 4: 50, 5: 120, 6: 320, 7: 380, 8: 340, 9: 250, 10: 120, 11: 120, 12: 12}
@@ -41,14 +41,17 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 def get_terrain(lat: float, lon: float):
-    """Nearest city ka elevation + slope return karta hai (terrain lookup)"""
-    best_city, best_dist = None, 1e9
-    for _, t in terrain_df.iterrows():
-        d = haversine(lat, lon, t["lat"], t["lon"])
+    """Nearest SRTM grid point ka REAL elevation + slope (120-pt NASA DEM)"""
+    best_i, best_dist = 0, 1e9
+    tlat = terrain_df["lat"].values
+    tlon = terrain_df["lon"].values
+    for i in range(len(terrain_df)):
+        d = haversine(lat, lon, tlat[i], tlon[i])
         if d < best_dist:
-            best_city, best_dist = t["city"], d
-    trow = terrain_df[terrain_df["city"] == best_city].iloc[0]
-    return float(trow["elevation_m"]), float(trow["slope_proxy_pct"]), best_city
+            best_i, best_dist = i, d
+    trow = terrain_df.iloc[best_i]
+    return float(trow["elevation_m"]), float(trow["slope_pct"]), f"SRTM({tlat[best_i]:.1f},{tlon[best_i]:.1f})"
+
 
 
 def get_live_rainfall(lat: float, lon: float):
@@ -152,16 +155,71 @@ def predict(lat: float, lon: float, month: int = None):
     }
 
 
+# 45 disaster-prone locations (landslide + flood hotspots, har saal)
 CITIES = [
-    {"name": "Guwahati, Assam",     "lat": 26.14, "lon": 91.73},
-    {"name": "Shillong, Meghalaya", "lat": 25.57, "lon": 91.88},
-    {"name": "Imphal, Manipur",     "lat": 24.81, "lon": 93.94},
-    {"name": "Kohima, Nagaland",    "lat": 25.67, "lon": 94.11},
-    {"name": "Aizawl, Mizoram",     "lat": 23.73, "lon": 92.72},
-    {"name": "Agartala, Tripura",   "lat": 23.83, "lon": 91.28},
-    {"name": "Itanagar, Arunachal", "lat": 27.08, "lon": 93.61},
-    {"name": "Gangtok, Sikkim",     "lat": 27.33, "lon": 88.61},
+    # SIKKIM
+    {"name": "Gangtok, Sikkim",       "lat": 27.33, "lon": 88.61, "state": "Sikkim"},
+    {"name": "Namchi, Sikkim",        "lat": 27.17, "lon": 88.36, "state": "Sikkim"},
+    {"name": "Mangan, Sikkim",        "lat": 27.51, "lon": 88.53, "state": "Sikkim"},
+    {"name": "Chungthang, Sikkim",    "lat": 27.60, "lon": 88.65, "state": "Sikkim"},
+    # MEGHALAYA
+    {"name": "Shillong, Meghalaya",   "lat": 25.57, "lon": 91.88, "state": "Meghalaya"},
+    {"name": "Cherrapunji, Meghalaya","lat": 25.30, "lon": 91.70, "state": "Meghalaya"},
+    {"name": "Tura, Meghalaya",       "lat": 25.51, "lon": 90.20, "state": "Meghalaya"},
+    {"name": "Jowai, Meghalaya",      "lat": 25.45, "lon": 92.20, "state": "Meghalaya"},
+    {"name": "Williamnagar, Meghalaya","lat": 25.48, "lon": 90.69, "state": "Meghalaya"},
+    # ARUNACHAL PRADESH
+    {"name": "Itanagar, Arunachal",   "lat": 27.08, "lon": 93.61, "state": "Arunachal Pradesh"},
+    {"name": "Naharlagun, Arunachal", "lat": 27.10, "lon": 93.69, "state": "Arunachal Pradesh"},
+    {"name": "Tawang, Arunachal",     "lat": 27.59, "lon": 91.87, "state": "Arunachal Pradesh"},
+    {"name": "Bomdila, Arunachal",    "lat": 27.26, "lon": 92.42, "state": "Arunachal Pradesh"},
+    {"name": "Pasighat, Arunachal",   "lat": 28.07, "lon": 95.33, "state": "Arunachal Pradesh"},
+    {"name": "Ziro, Arunachal",       "lat": 27.54, "lon": 93.83, "state": "Arunachal Pradesh"},
+    {"name": "Bhalukpong, Arunachal", "lat": 27.14, "lon": 92.71, "state": "Arunachal Pradesh"},
+    {"name": "Roing, Arunachal",      "lat": 28.14, "lon": 95.39, "state": "Arunachal Pradesh"},
+    {"name": "Anini, Arunachal",      "lat": 28.22, "lon": 95.89, "state": "Arunachal Pradesh"},
+    # NAGALAND
+    {"name": "Kohima, Nagaland",      "lat": 25.67, "lon": 94.11, "state": "Nagaland"},
+    {"name": "Dimapur, Nagaland",     "lat": 25.91, "lon": 93.73, "state": "Nagaland"},
+    {"name": "Mokokchung, Nagaland",  "lat": 26.32, "lon": 94.52, "state": "Nagaland"},
+    {"name": "Wokha, Nagaland",       "lat": 26.10, "lon": 94.26, "state": "Nagaland"},
+    {"name": "Mon, Nagaland",         "lat": 27.20, "lon": 95.15, "state": "Nagaland"},
+    {"name": "Phek, Nagaland",        "lat": 25.57, "lon": 94.42, "state": "Nagaland"},
+    # MANIPUR
+    {"name": "Imphal, Manipur",       "lat": 24.81, "lon": 93.94, "state": "Manipur"},
+    {"name": "Churachandpur, Manipur","lat": 24.33, "lon": 93.68, "state": "Manipur"},
+    {"name": "Ukhrul, Manipur",       "lat": 25.05, "lon": 94.36, "state": "Manipur"},
+    {"name": "Senapati, Manipur",     "lat": 25.29, "lon": 94.02, "state": "Manipur"},
+    {"name": "Tamenglong, Manipur",   "lat": 24.87, "lon": 93.51, "state": "Manipur"},
+    {"name": "Thoubal, Manipur",      "lat": 24.63, "lon": 94.01, "state": "Manipur"},
+    # MIZORAM
+    {"name": "Aizawl, Mizoram",       "lat": 23.73, "lon": 92.72, "state": "Mizoram"},
+    {"name": "Lunglei, Mizoram",      "lat": 22.88, "lon": 92.73, "state": "Mizoram"},
+    {"name": "Champhai, Mizoram",     "lat": 23.97, "lon": 93.33, "state": "Mizoram"},
+    {"name": "Serchhip, Mizoram",     "lat": 23.26, "lon": 92.88, "state": "Mizoram"},
+    {"name": "Lawngtlai, Mizoram",    "lat": 22.55, "lon": 92.90, "state": "Mizoram"},
+    # TRIPURA
+    {"name": "Agartala, Tripura",     "lat": 23.83, "lon": 91.28, "state": "Tripura"},
+    {"name": "Udaipur, Tripura",      "lat": 23.53, "lon": 91.48, "state": "Tripura"},
+    {"name": "Dharmanagar, Tripura",  "lat": 24.36, "lon": 92.17, "state": "Tripura"},
+    {"name": "Ambassa, Tripura",      "lat": 23.80, "lon": 91.84, "state": "Tripura"},
+    {"name": "Kailashahar, Tripura",  "lat": 24.33, "lon": 92.00, "state": "Tripura"},
+    # ASSAM (Brahmaputra flood belt + landslide zones)
+    {"name": "Guwahati, Assam",       "lat": 26.14, "lon": 91.73, "state": "Assam"},
+    {"name": "Silchar, Assam",        "lat": 24.83, "lon": 92.77, "state": "Assam"},
+    {"name": "Dibrugarh, Assam",      "lat": 27.48, "lon": 95.00, "state": "Assam"},
+    {"name": "Tinsukia, Assam",       "lat": 27.50, "lon": 95.36, "state": "Assam"},
+    {"name": "Haflong, Assam",        "lat": 25.10, "lon": 93.20, "state": "Assam"},
+    {"name": "Diphu, Assam",          "lat": 25.83, "lon": 93.43, "state": "Assam"},
+    {"name": "Jorhat, Assam",         "lat": 26.75, "lon": 94.22, "state": "Assam"},
+    {"name": "Dhemaji, Assam",        "lat": 27.48, "lon": 94.58, "state": "Assam"},
+    {"name": "Majuli, Assam",         "lat": 26.95, "lon": 94.17, "state": "Assam"},
+    {"name": "Karimganj, Assam",      "lat": 24.87, "lon": 92.35, "state": "Assam"},
+    {"name": "Tezpur, Assam",         "lat": 26.63, "lon": 92.80, "state": "Assam"},
+    {"name": "Nagaon, Assam",         "lat": 26.35, "lon": 92.68, "state": "Assam"},
+    {"name": "Karimganj, Assam",      "lat": 24.87, "lon": 92.35, "state": "Assam"},
 ]
+
 
 
 @app.get("/alerts")
@@ -175,6 +233,7 @@ def get_alerts(use_live: bool = True):
         r = get_risk(c["lat"], c["lon"], use_live=use_live)
         alerts.append({
             "name": c["name"], "lat": c["lat"], "lon": c["lon"],
+             "state": c.get("state", ""), 
             "risk": r["risk"], "level": r["level"],
             "rainfall_mm": r["rainfall"],
             "elevation_m": r["elevation"],
