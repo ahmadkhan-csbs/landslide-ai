@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import pandas as pd
+import numpy as np
 import os
 import urllib.request
 import json as jsonlib
@@ -16,12 +17,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-model = joblib.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml_model", "landslide_model.pkl"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# MODEL v2 — Rainfall + Terrain (Elevation, Slope)
+model = joblib.load(os.path.join(BASE_DIR, "..", "ml_model", "landslide_model_v2.pkl"))
+
+# Terrain data (elevation + slope of 8 NER cities)
+terrain_df = pd.read_csv(os.path.join(BASE_DIR, "..", "data", "ner_terrain.csv"))
 
 # Seasonal fallback rainfall (mm) — sirf tab use hoga jab live API fail ho
 RAINFALL = {1: 10, 2: 15, 3: 30, 4: 50, 5: 120, 6: 320, 7: 380, 8: 340, 9: 250, 10: 120, 11: 120, 12: 12}
 
-FEATURES = ["latitude", "longitude", "month", "rainfall", "terrain_risk"]
+FEATURES = ["lat", "lon", "month", "rainfall", "elevation", "slope"]
+
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = np.radians(lat2 - lat1)
+    dlon = np.radians(lon2 - lon1)
+    a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * \
+        np.cos(np.radians(lat2)) * np.sin(dlon/2)**2
+    return R * 2 * np.arcsin(np.sqrt(a))
+
+
+def get_terrain(lat: float, lon: float):
+    """Nearest city ka elevation + slope return karta hai (terrain lookup)"""
+    best_city, best_dist = None, 1e9
+    for _, t in terrain_df.iterrows():
+        d = haversine(lat, lon, t["lat"], t["lon"])
+        if d < best_dist:
+            best_city, best_dist = t["city"], d
+    trow = terrain_df[terrain_df["city"] == best_city].iloc[0]
+    return float(trow["elevation_m"]), float(trow["slope_proxy_pct"]), best_city
 
 
 def get_live_rainfall(lat: float, lon: float):
@@ -44,8 +71,8 @@ def get_live_rainfall(lat: float, lon: float):
 
 
 def make_input(lat, lon, month, rainfall):
-    terr = 1 / (1 + abs(lat - 25.5) + abs(lon - 93.0))
-    return pd.DataFrame([[lat, lon, month, rainfall, terr]], columns=FEATURES)
+    elevation, slope, _ = get_terrain(lat, lon)
+    return pd.DataFrame([[lat, lon, month, rainfall, elevation, slope]], columns=FEATURES)
 
 
 def get_risk(lat, lon, month=None, use_live=True):
@@ -65,6 +92,7 @@ def get_risk(lat, lon, month=None, use_live=True):
     else:
         rainfall = RAINFALL.get(month, 50)
 
+    elevation, slope, nearest_city = get_terrain(lat, lon)
     prob = model.predict_proba(make_input(lat, lon, month, rainfall))[0][1] * 100
 
     if prob > 60:
@@ -74,11 +102,16 @@ def get_risk(lat, lon, month=None, use_live=True):
     else:
         level, color = "LOW", "green"
 
-    main_reason = (
-        "Heavy monsoon rainfall + fragile terrain"
-        if rainfall > 200
-        else ("Moderate rainfall, monitor conditions" if rainfall > 60 else "Dry conditions - low risk")
-    )
+    if rainfall > 200:
+        main_reason = "Heavy rainfall + steep fragile terrain" if slope > 2 else "Heavy monsoon rainfall"
+    elif prob > 60:
+        main_reason = "High terrain vulnerability (steep slope/elevation)" if slope > 2 else "Elevated seasonal risk"
+    elif rainfall > 60:
+        main_reason = "Moderate rainfall, monitor conditions"
+    else:
+        main_reason = "Low rainfall, baseline terrain risk" if prob > 30 else "Dry conditions - low risk"
+
+
 
     return {
         "risk": round(prob, 1),
@@ -86,6 +119,9 @@ def get_risk(lat, lon, month=None, use_live=True):
         "color": color,
         "rainfall": round(rainfall, 1),
         "month": month,
+        "elevation": round(elevation, 1),
+        "slope": round(slope, 2),
+        "nearest_city": nearest_city,
         "data_source": data_source,
         "main_reason": main_reason,
     }
@@ -93,7 +129,7 @@ def get_risk(lat, lon, month=None, use_live=True):
 
 @app.get("/")
 def home():
-    return {"message": "Landslide Early Warning API - NER", "status": "running"}
+    return {"message": "Landslide Early Warning API - NER (Model v2)", "status": "running"}
 
 
 @app.get("/predict")
@@ -108,6 +144,9 @@ def predict(lat: float, lon: float, month: int = None):
         "data_source": r["data_source"],
         "factors": {
             "rainfall_mm": r["rainfall"],
+            "elevation_m": r["elevation"],
+            "slope_pct": r["slope"],
+            "nearest_city": r["nearest_city"],
             "main_reason": r["main_reason"]
         }
     }
@@ -138,15 +177,16 @@ def get_alerts(use_live: bool = True):
             "name": c["name"], "lat": c["lat"], "lon": c["lon"],
             "risk": r["risk"], "level": r["level"],
             "rainfall_mm": r["rainfall"],
+            "elevation_m": r["elevation"],
+            "slope_pct": r["slope"],
             "data_source": r["data_source"],
         })
     return alerts
 
 from fastapi import Body
-from datetime import datetime
 import json
 
-REPORTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports.json")
+REPORTS_FILE = os.path.join(BASE_DIR, "reports.json")
 
 def load_reports():
     if os.path.exists(REPORTS_FILE):
