@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "lat": 27.009514155671752,
+    "lon": 88.2836057545481,
+    "description": "road tut gaya h ",
+    "severity": "HIGH",
+    "reporter": "ahmad",
+    "time": "04 Sep 2026, 01:03 PM",
+    "ml_risk": 21.5,
+    "ml_level": "LOW"
+  }
+]
