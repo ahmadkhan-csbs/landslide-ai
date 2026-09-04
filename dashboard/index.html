@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" contentwidth=device-width, initial-scale=1.0">
 <title>NER Landslide Early Warning System</title>
 
 <!-- Google Fonts + Icons -->
@@ -34,7 +34,7 @@
     <div class="stats">
       <div class="stat"><div class="num" id="total">-</div><div class="label">Cities</div></div>
       <div class="stat"><div class="num text-danger" id="high">-</div><div class="label">High Risk</div></div>
-      <div class="stat"><div class="num text-success">93.6%</div><div class="label">Model Acc</div></div>
+ <div class="stat"><div class="num text-success">91.1%</div><div class="label">Model Acc</div></div>
     </div>
     <div class="mode-btns">
       <button class="reset-btn" onclick="map.setView([25.5, 92.5], 6)">
@@ -50,9 +50,10 @@
     <div class="spinner" id="loader"></div>
     <div id="alerts"></div>
     <div class="model-info">
-      <b><i class="fa-solid fa-robot"></i> AI Model:</b> Random Forest<br>
-      <b><i class="fa-solid fa-chart-simple"></i> Training Data:</b> NASA Landslide Catalog (1,265 India events)<br>
-      <b><i class="fa-solid fa-cloud-rain"></i> Top Factor:</b> Monsoon rainfall (57.8% importance)<br>
+      <b><i class="fa-solid fa-robot"></i> AI Model:</b> Random Forest v2 (91.1% accuracy)<br>
+      <b><i class="fa-solid fa-chart-simple"></i> Training Data:</b> NASA Landslide Catalog — 308 NER events<br>
+      <b><i class="fa-solid fa-mountain"></i> Terrain:</b> NASA SRTM 30m Satellite DEM (120-pt grid, 6424m peaks)<br>
+      <b><i class="fa-solid fa-cloud-rain"></i> Top Factors:</b> Rainfall 34.6% | Slope 17.4% | Location 30%<br>
       <b><i class="fa-solid fa-tower-broadcast"></i> Live Data:</b> Real rainfall via Open-Meteo API<br>
       <b><i class="fa-solid fa-magnifying-glass"></i> Explainable AI:</b> Har alert ke reasons dashboard pe
     </div>

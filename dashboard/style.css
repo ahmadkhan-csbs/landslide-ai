@@ -99,3 +99,5 @@ header .live { background: #ef4444; padding: 5px 14px; border-radius: 20px;-size
   .sidebar { order: 2; width: 100%; max-height: none; }
 }
 
+/* ===== TERRAIN LINE (alert cards) ===== */
+.terrain-line { margin-top: 6px; font-size: 11px; color: #94a3b8; }

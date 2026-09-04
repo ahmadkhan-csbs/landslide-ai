@@ -1,5 +1,5 @@
 """
-Merge Pipeline: Landslide events + Rainfall + Terrain
+Merge Pipeline: Landslide events + Rainfall + REAL SRTM Terrain
 → final_training_data.csv banata hai
 Usage: python merge_data.py
 """
@@ -9,8 +9,16 @@ import numpy as np
 # ===== CONFIG =====
 EVENTS_CSV   = "data/Global_Landslide_Catalog_Export.csv"
 RAIN_CSV     = "data/ner_rainfall_2015_2024.csv"
-TERRAIN_CSV  = "data/ner_terrain.csv"
+TERRAIN_CSV  = "data/ner_terrain_v2.csv"   # REAL SRTM 120-point grid ✅
 OUT_CSV      = "data/final_training_data.csv"
+
+# Rainfall cities (name + coords) — rainfall lookup ke liye
+RAIN_CITIES = {
+    "Guwahati":  (26.14, 91.73), "Shillong": (25.57, 91.88),
+    "Imphal":    (24.81, 93.94), "Kohima":   (25.67, 94.11),
+    "Aizawl":    (23.73, 92.72), "Agartala": (23.83, 91.28),
+    "Itanagar":  (27.08, 93.61), "Gangtok":  (27.33, 88.61),
+}
 
 
 def haversine(lat1, lon1, lat2, lon2):
@@ -31,7 +39,7 @@ def main():
 
     print(f"📊 Events: {len(events)}, Rainfall rows: {len(rain)}, Terrain rows: {len(terrain)}")
 
-    # 2. Events ko clean karo (NASA catalog standard columns)
+    # 2. Events ko clean karo
     lat_col = "latitude"
     lon_col = "longitude"
     date_col = "event_date"
@@ -41,41 +49,53 @@ def main():
     events["year"] = events[date_col].dt.year
     events["month"] = events[date_col].dt.month
 
-    # 2015-2024 range ke events (hamara rainfall data isi ka hai)
     events = events[(events["year"] >= 2015) & (events["year"] <= 2024)]
-    print(f"✅ 2015-2024 ke events: {len(events)}")
+    print(f"✅ 20152024 ke events: {len(events)}")
 
-    # SIRF NER region ke events (India filter)
-    # NER bounding box: lat 21.5-29.5, lon 87.5-97.5
+    # SIRF NER region ke events
     events = events[
         (events[lat_col].between(21.5, 29.5)) &
         (events[lon_col].between(87.5, 97.5))
     ]
     print(f"✅ NER region ke events: {len(events)}")
 
-    # 3. Har event ko NEAREST city se attach karo
-    city_coords = list(zip(terrain["city"], terrain["lat"], terrain["lon"]))
+    # 3. Lookups banao
+    # Terrain grid points (REAL SRTM): (lat, lon, elevation, slope) tuples
+    grid = list(zip(terrain["lat"], terrain["lon"],
+                    terrain["elevation_m"], terrain["slope_pct"]))
+    # Rain lookup: (nearest rain, month) -> avg_rainfall
     rain_lookup = {(r["city"], r["month"]): r["avg_rainfall"] for _, r in rain.iterrows()}
-    rng = np.random.default_rng(42)   # rng yahan EK BAAR bana hai ✅
+    rain_city_coords = list(RAIN_CITIES.values())
+    rain_city_names = list(RAIN_CITIES.keys())
+
+    rng = np.random.default_rng(42)
+
+    def nearest_rain_city(lat, lon):
+        best, bd = None, 1e9
+        for name, (clat, clon) in RAIN_CITIES.items():
+            d = haversine(lat, lon, clat, clon)
+            if d < bd:
+                best, bd = name, d
+        return best
 
     rows = []
     for _, ev in events.iterrows():
-        # nearest city nikalo
-        best_city, best_dist = None, 1e9
-        for cname, clat, clon in city_coords:
-            d = haversine(ev[lat_col], ev[lon_col], clat, clon)
+        # NEAREST terrain grid point (REAL SRTM)
+        best_t, best_dist = None, 1e9
+        for g in grid:
+            d = haversine(ev[lat_col], ev[lon_col], g[0], g[1])
             if d < best_dist:
-                best_city, best_dist = cname, d
+                best_t, best_dist = g, d
 
-        trow = terrain[terrain["city"] == best_city].iloc[0]
-        rainfall = rain_lookup.get((best_city, ev["month"]), rain["avg_rainfall"].mean())
+        rcity = nearest_rain_city(ev[lat_col], ev[lon_col])
+        rainfall = rain_lookup.get((rcity, ev["month"]), rain["avg_rainfall"].mean())
 
         rows.append({
             "lat": ev[lat_col], "lon": ev[lon_col],
             "month": ev["month"], "year": ev["year"],
             "rainfall": round(rainfall, 2),
-            "elevation": max(5, trow["elevation_m"] + rng.normal(0, 150)),
-            "slope": max(0.1, trow["slope_proxy_pct"] * rng.uniform(0.7, 1.8)),
+            "elevation": max(5, best_t[2] + rng.normal(0, 150)),
+            "slope": max(0.1, best_t[3] * rng.uniform(0.7, 1.8)),
             "dist_city_km": round(best_dist, 1),
             "landslide": 1,     # POSITIVE class (asli event)
         })
@@ -83,26 +103,26 @@ def main():
     pos = pd.DataFrame(rows)
     print(f"✅ Positive samples (landslide events): {len(pos)}")
 
-    # 4. NEGATIVE samples banao (safe locations — jahan landslide NAHI hua)
+    # 4. NEGATIVE samples banao
     neg_rows = []
-    n_neg = len(pos)  # balanced: jitne positive, utne negative
+    n_neg = len(pos)
     while len(neg_rows) < n_neg:
-        cname, clat, clon = city_coords[rng.integers(0, len(city_coords))]
-        jitter_lat = clat + rng.normal(0, 0.15)   # ~15km aas paas
-        jitter_lon = clon + rng.normal(0, 0.15)
+        g = grid[rng.integers(0, len(grid))]
+        jitter_lat = g[0] + rng.normal(0, 0.15)
+        jitter_lon = g[1] + rng.normal(0, 0.15)
         month = int(rng.integers(1, 13))
         year = int(rng.integers(2015, 2025))
 
-        trow = terrain[terrain["city"] == cname].iloc[0]
-        rainfall = rain_lookup.get((cname, month), rain["avg_rainfall"].mean())
+        rcity = nearest_rain_city(jitter_lat, jitter_lon)
+        rainfall = rain_lookup.get((rcity, month), rain["avg_rainfall"].mean())
 
         neg_rows.append({
             "lat": jitter_lat, "lon": jitter_lon,
             "month": month, "year": year,
-            "rainfall": round(rainfall * rng.uniform(0.4, 0.9), 2),  # kam baarish (safe)
-            "elevation": max(5, trow["elevation_m"] + rng.normal(0, 300)),   # variation!
-            "slope": max(0.1, trow["slope_proxy_pct"] * rng.uniform(0.3, 2.5)),
-            "dist_city_km": round(abs(haversine(clat, clon, jitter_lat, jitter_lon)), 1),
+            "rainfall": round(rainfall * rng.uniform(0.4, 0.9), 2),
+            "elevation": max(5, g[2] + rng.normal(0, 300)),
+            "slope": max(0.1, g[3] * rng.uniform(0.3, 2.5)),
+            "dist_city_km": round(abs(haversine(g[0], g[1], jitter_lat, jitter_lon)), 1),
             "landslide": 0,   # NEGATIVE class
         })
 

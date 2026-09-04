@@ -33,14 +33,15 @@ function loadAlerts(useLive) {
       box.innerHTML = '';
       alerts.forEach(a => {
         if (a.level === 'HIGH') high++;
-        const color = a.level === 'HIGH' ? '#ef4444' : (a.level === 'MEDIUM' ? '#f59e0b' : '#22c55e');
+        const color = a.level === 'HIGH' ? '#ef4444' : (a.level === 'MEDIUM' ? '#fe0b' : '#22c55e');
 
         const marker = L.circleMarker([a.lat, a.lon], {
           radius: 14, color: color, fillColor: color, fillOpacity: 0.7, weight: 2,
           className: a.level === 'HIGH' ? 'high-risk-pulse' : ''   // pulse on HIGH
         }).addTo(map).bindPopup(
-          '<b>' + a.name + '</b><br>Risk: ' + a.risk + '%<br>Level: ' + a.level +
-          '<br>Rainfall: ' + (a.rainfall_mm || '-') + 'mm' +
+          '<b>' + a.name + '</b><br>Risk: ' + a.risk + '% — ' + a.level +
+          '<br>🌧️ Rainfall: ' + (a.rainfall_mm || '-') + 'mm' +
+          '<br>🏔️ Elevation: ' + (a.elevation_m || '-') + 'm · 📐 Slope: ' + (a.slope_pct || '-') + '%' +
           '<br><small>' + (a.data_source || '') + '</small>'
         );
         markers.push(marker);
@@ -50,7 +51,8 @@ function loadAlerts(useLive) {
         card.innerHTML =
           '<div class="city">' + a.name + '</div>' +
           '<div class="risk-line"><span>Risk: <b>' + a.risk + '%</b></span>' +
-          '<span class="badge ' + a.level + '">' + a.level + '</span></div>';
+          '<span class="badge ' + a.level + '">' + a.level + '</span></div>' +
+          '<div class="terrain-line">🏔️ ' + (a.elevation_m || '-') + 'm · 📐 ' + (a.slope_pct || '-') + '% · 🌧️ ' + (a.rainfall_mm || '-') + 'mm</div>';
         card.onclick = () => { map.setView([a.lat, a.lon], 9); marker.openPopup(); };
         box.appendChild(card);
       });
@@ -132,9 +134,7 @@ window.addEventListener('resize', function() {
   map.invalidateSize();
 });
 
-
-// ===== START =====
 // ===== START =====
 loadAlerts(true);
 drawReports();
-setTimeout(() => map.invalidateSize(), 500);   
+setTimeout(() => map.invalidateSize(), 500);
