@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Landslide AI — Authority Review Command Center</title><link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <main>
+    <a href="index.html">← Back to public dashboard</a>
+    <div class="hero"><div><p class="eyebrow">NER LANDSLIDE AI · AUTHORIZED REVIEW</p><h1>Authority Review Command Center</h1><p>Incident triage, verification and authorised authority routing.</p></div><div class="live-chip">● LOCAL SYSTEM ONLINE</div></div>
+    <p class="notice">Restricted local panel. Every change is audited. Dispatch is never automatic and requires an approved official recipient.</p>
+    <section id="loginCard"><h2>Admin sign in</h2><input id="password" type="password" placeholder="Admin password" autocomplete="current-password"><button onclick="login()">Sign in</button><p id="loginMessage"></p></section>
+    <section id="reportsCard" hidden>
+      <div class="toolbar"><h2>Incident command queue</h2><div><button class="outline" onclick="refreshReports()">↻ Refresh</button> <button onclick="logout()">Sign out</button></div></div>
+      <div class="metrics"><div><b id="metricTotal">0</b><span>Total reports</span></div><div><b id="metricUrgent">0</b><span>High priority</span></div><div><b id="metricUnverified">0</b><span>Needs verification</span></div><div><b id="metricQueued">0</b><span>Authority queue</span></div></div>
+      <div class="quality-bar" id="adminDataHealth">Checking live data quality…</div>
+      <div class="filters"><input id="adminSearch" type="search" placeholder="Search report / incident / status" oninput="renderReports()"><select id="adminFilter" onchange="renderReports()"><option value="ALL">All reports</option><option value="HIGH">High priority</option><option value="UNVERIFIED">Unverified</option><option value="QUEUED">Queued for authority</option><option value="SENT">Sent to configured recipient</option></select></div>
+      <p id="reportMessage"></p><div id="reports"></div>
+    </section>
+  </main>
+  <script src="admin.js"></script>
+</body>
+</html>

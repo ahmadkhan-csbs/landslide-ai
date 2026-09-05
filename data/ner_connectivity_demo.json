@@ -1,0 +1,19 @@
+{
+  "source": "NER Landslide AI curated SIH demonstration corridors; broad intercity geometry only. Verify with road authority before use.",
+  "updated_at_utc": "2026-09-05T00:00:00Z",
+  "corridors": [
+    {"id": "NER-DEMO-01", "name": "Guwahati–Shillong demonstration corridor", "points": [[26.1445, 91.7362], [25.991, 91.87], [25.78, 91.91], [25.5788, 91.8933]]},
+    {"id": "NER-DEMO-02", "name": "Siliguri–Gangtok demonstration corridor", "points": [[26.7271, 88.3953], [27.09, 88.47], [27.205, 88.53], [27.3389, 88.6065]]},
+    {"id": "NER-DEMO-03", "name": "Imphal–Churachandpur demonstration corridor", "points": [[24.817, 93.9368], [24.66, 93.82], [24.49, 93.73], [24.333, 93.68]]},
+    {"id": "NER-DEMO-04", "name": "Aizawl–Lunglei demonstration corridor", "points": [[23.7271, 92.7176], [23.42, 92.75], [23.12, 92.74], [22.885, 92.73]]},
+    {"id": "NER-DEMO-05", "name": "Kohima–Mokokchung demonstration corridor", "points": [[25.6751, 94.1086], [25.9, 94.25], [26.11, 94.4], [26.322, 94.52]]}
+  ],
+  "service_points": [
+    {"name": "Guwahati emergency-service reference point", "type": "Emergency coordination reference", "lat": 26.1445, "lon": 91.7362, "source": "Curated SIH demonstration seed"},
+    {"name": "Shillong emergency-service reference point", "type": "Emergency coordination reference", "lat": 25.5788, "lon": 91.8933, "source": "Curated SIH demonstration seed"},
+    {"name": "Gangtok emergency-service reference point", "type": "Emergency coordination reference", "lat": 27.3389, "lon": 88.6065, "source": "Curated SIH demonstration seed"},
+    {"name": "Imphal emergency-service reference point", "type": "Emergency coordination reference", "lat": 24.817, "lon": 93.9368, "source": "Curated SIH demonstration seed"},
+    {"name": "Aizawl emergency-service reference point", "type": "Emergency coordination reference", "lat": 23.7271, "lon": 92.7176, "source": "Curated SIH demonstration seed"},
+    {"name": "Kohima emergency-service reference point", "type": "Emergency coordination reference", "lat": 25.6751, "lon": 94.1086, "source": "Curated SIH demonstration seed"}
+  ]
+}

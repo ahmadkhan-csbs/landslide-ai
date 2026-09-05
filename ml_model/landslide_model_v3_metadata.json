@@ -1,0 +1,31 @@
+{
+  "artifact_status": "candidate_not_deployed",
+  "model_type": "RandomForestClassifier",
+  "features": [
+    "lat",
+    "lon",
+    "month",
+    "rainfall",
+    "elevation",
+    "slope"
+  ],
+  "target": "event_observed",
+  "training_rows": 840,
+  "training_years": [
+    2007,
+    2016
+  ],
+  "sample_types": {
+    "background_no_record": 420,
+    "catalogued_landslide": 420
+  },
+  "feature_importance": {
+    "lat": 0.309682,
+    "lon": 0.242436,
+    "month": 0.030403,
+    "rainfall": 0.075326,
+    "elevation": 0.177788,
+    "slope": 0.164365
+  },
+  "deployment_guardrail": "Do not wire this model into live alerts until data coverage, calibration, and operational thresholds are reviewed."
+}

@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" contentwidth=device-width, initial-scale=1.0">
-<title>NER Landslide Early Warning System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NER Landslide Experimental Screening & Incident Support</title>
 
 <!-- Google Fonts + Icons -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -19,26 +19,30 @@
 <body>
 <header>
   <div class="left">
-    <h1><i class="fa-solid fa-mountain-sun"></i> NER Landslide Early Warning System</h1>
+    <h1><i class="fa-solid fa-mountain-sun"></i> NER Landslide Screening & Incident Support</h1>
   </div>
   <div class="header-right">
+    <button class="method-btn" onclick="openMethodPanel()"><i class="fa-solid fa-database"></i> Data & Method</button>
+    <button class="emergency-btn" onclick="openEmergencyHelp()"><i class="fa-solid fa-phone-volume"></i> Emergency Help</button>
+    <button class="track-btn" onclick="openTrackReport()"><i class="fa-solid fa-magnifying-glass"></i> Track Report</button>
     <button class="report-btn" onclick="startReport()"><i class="fa-solid fa-triangle-exclamation"></i> Report Landslide</button>
-    <span class="live"><i class="fa-solid fa-circle" style="font-size:8px;"></i> LIVE</span>
+    <span class="live" id="liveStatus"><i class="fa-solid fa-circle" style="font-size:8px;"></i> LOADING</span>
   </div>
 </header>
+<div class="experimental-banner" role="note"><i class="fa-solid fa-triangle-exclamation"></i> Experimental landslide screening only — not an official disaster warning. Follow IMD, state disaster authorities, and local evacuation instructions.</div>
 
 <div class="container">
   <div id="map"></div>
   <div class="sidebar">
-    <h2><i class="fa-solid fa-bell"></i> Live Risk Alerts</h2>
+    <h2 id="modeLabel"><i class="fa-solid fa-bell"></i> Risk Screening</h2>
     <div class="stats">
       <div class="stat"><div class="num" id="total">-</div><div class="label">Cities</div></div>
       <div class="stat"><div class="num text-danger" id="high">-</div><div class="label">High Risk</div></div>
- <div class="stat"><div class="num text-success">91.1%</div><div class="label">Model Acc</div></div>
+ <div class="stat"><div class="num text-success">6</div><div class="label">ML Inputs</div></div>
     </div>
 
-        <div class="state-tabs">
-      <button class="st-btn active" onclick="filterState('ALL', this)">All (45)</button>
+    <div class="state-tabs">
+      <button class="st-btn active" onclick="filterState('ALL', this)">All (53)</button>
       <button class="st-btn" onclick="filterState('Assam', this)">Assam</button>
       <button class="st-btn" onclick="filterState('Sikkim', this)">Sikkim</button>
       <button class="st-btn" onclick="filterState('Meghalaya', this)">Meghalaya</button>
@@ -62,15 +66,43 @@
         <i class="fa-solid fa-cloud-showers-heavy"></i> MONSOON SIM
       </button>
     </div>
+    <div class="alert-filters" aria-label="Alert filters">
+      <input id="citySearch" type="search" placeholder="Search city…" oninput="renderAlerts()">
+      <select id="levelFilter" onchange="renderAlerts()">
+        <option value="ALL">All screening levels</option><option value="HIGH">High</option>
+        <option value="MEDIUM">Medium</option><option value="LOW">Low</option>
+      </select>
+      <select id="sourceFilter" onchange="renderAlerts()">
+        <option value="ALL">All data sources</option><option value="LIVE">Live data</option>
+        <option value="FALLBACK">Fallback data</option><option value="SIMULATION">Simulation</option>
+      </select>
+    </div>
+    <label class="incident-toggle"><input id="showReports" type="checkbox" checked onchange="drawReports()"> Show unverified citizen incident reports</label>
+    <label class="incident-toggle"><input id="showConnectivity" type="checkbox" checked onchange="loadConnectivityImpact()"> Show connectivity demonstration corridors</label>
+    <label class="simulation-control" for="simMonth">Simulation month
+      <select id="simMonth" onchange="refreshSimulation()">
+        <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+        <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+        <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+      </select>
+    </label>
+    <p class="data-status" id="dataStatus">Loading rainfall data…</p>
+    <p class="weather-detail" id="weatherDetail">Source and freshness will appear after data loads.</p>
+    <p class="auto-refresh" id="autoRefresh">Auto-refresh: every 15 minutes.</p>
+    <div class="data-health" id="dataHealth">Checking data quality…</div>
+    <div class="connectivity-panel" id="connectivityPanel">Loading road connectivity impact…</div>
     <div class="spinner" id="loader"></div>
+    <div class="map-key"><span class="key screening"></span> Screening location <span class="key incident"></span> Unverified citizen report <span class="key corridor"></span> Demonstration corridor</div>
     <div id="alerts"></div>
     <div class="model-info">
-      <b><i class="fa-solid fa-robot"></i> AI Model:</b> Random Forest v2 (91.1% accuracy)<br>
-      <b><i class="fa-solid fa-chart-simple"></i> Training Data:</b> NASA Landslide Catalog — 308 NER events<br>
-      <b><i class="fa-solid fa-mountain"></i> Terrain:</b> NASA SRTM 30m Satellite DEM (120-pt grid, 6424m peaks)<br>
-      <b><i class="fa-solid fa-cloud-rain"></i> Top Factors:</b> Rainfall 34.6% | Slope 17.4% | Location 30%<br>
-      <b><i class="fa-solid fa-tower-broadcast"></i> Live Data:</b> Real rainfall via Open-Meteo API<br>
-      <b><i class="fa-solid fa-magnifying-glass"></i> Explainable AI:</b> Har alert ke reasons dashboard pe
+      <b><i class="fa-solid fa-robot"></i> Model score:</b> experimental terrain susceptibility—not a probability<br>
+      <b><i class="fa-solid fa-chart-simple"></i> Risk inputs:</b> location, month, rainfall, elevation and slope<br>
+      <b><i class="fa-solid fa-mountain"></i> Terrain:</b> nearest available SRTM terrain-grid value<br>
+      <b><i class="fa-solid fa-cloud-rain"></i> Rainfall:</b> live 7-day average or seasonal simulation<br>
+      <b><i class="fa-solid fa-tower-broadcast"></i> Live Data:</b> IMD when configured; Open-Meteo labelled fallback<br>
+      <b><i class="fa-solid fa-circle-info"></i> Current screen:</b> rainfall-and-terrain rule; experimental, not an official warning
+      <br><a class="admin-link" href="admin.html">Local incident verification (authorized users)</a>
     </div>
   </div>
 </div>
@@ -82,6 +114,15 @@
     <p id="locDisplay" class="loc-display"><i class="fa-solid fa-location-dot"></i> Pehle map pe location click karo...</p>
     <input id="repName" placeholder="Aapka naam (optional)">
     <textarea id="repDesc" placeholder="Kya hua? (jaise: road pe dhalan, makan mein crack...)"></textarea>
+    <select id="repType">
+      <option value="LANDSLIDE">Landslide</option><option value="ROAD_BLOCKED">Road blocked</option>
+      <option value="SLOPE_CRACK">Slope / road crack</option><option value="PROPERTY_DAMAGE">Property damage</option>
+      <option value="DEBRIS_FLOW">Debris flow</option><option value="OTHER">Other</option>
+    </select>
+    <input id="repPeople" type="number" min="0" max="10000" value="0" placeholder="People at immediate risk (optional)">
+    <input id="repPhone" type="tel" maxlength="25" placeholder="Phone number (optional; private)">
+    <label class="photo-label">Photo (optional, JPG/PNG/WebP, max 5 MB)<input id="repPhoto" type="file" accept="image/jpeg,image/png,image/webp"></label>
+    <p class="report-note">Your report is saved as <b>unverified</b>. It is not automatically sent to authorities.</p>
     <select id="repSev">
       <option value="LOW">Low - chhoti dikhawat</option>
       <option value="MEDIUM" selected>Medium - dikhawa ho raha hai</option>
@@ -91,6 +132,61 @@
       <button class="btn-submit" onclick="submitReport()">Submit Report</button>
       <button class="btn-cancel" onclick="closeReport()">Cancel</button>
     </div>
+  </div>
+</div>
+
+<div id="trackModal" class="modal-overlay">
+  <div class="modal-box track-box">
+    <button class="close-modal" onclick="closeTrackReport()" aria-label="Close">×</button>
+    <h3><i class="fa-solid fa-magnifying-glass" style="color:#38bdf8;"></i> Track Incident Report</h3>
+    <p>Enter the reference ID shown after report submission.</p>
+    <input id="trackReference" placeholder="Example: NER-20260905-00001" maxlength="30">
+    <button class="btn-submit" onclick="trackReport()">Check status</button>
+    <div id="trackResult" class="track-result" aria-live="polite"></div>
+    <p class="report-note">A report status is not an emergency response confirmation. Call 112 for immediate danger.</p>
+  </div>
+</div>
+
+<div id="safetyModal" class="modal-overlay">
+  <div class="modal-box safety-box">
+    <button class="close-modal" onclick="closeSafetyGuide()" aria-label="Close">×</button>
+    <h3><i class="fa-solid fa-person-shelter" style="color:#f59e0b;"></i> What to do now</h3>
+    <div id="safetyGuide" class="safety-guide"></div>
+    <a class="call-112" href="tel:112"><i class="fa-solid fa-phone"></i> Emergency: Call 112</a>
+    <p class="report-note">This is general safety guidance, not an official evacuation order. Follow directions from local authorities.</p>
+  </div>
+</div>
+
+<div id="locationModal" class="modal-overlay">
+  <div class="modal-box location-box">
+    <button class="close-modal" onclick="closeLocationDetails()" aria-label="Close">×</button>
+    <h3><i class="fa-solid fa-location-dot" style="color:#38bdf8;"></i> Location Intelligence</h3>
+    <div id="locationDetails" class="location-details"></div>
+    <div class="modal-btns"><button class="btn-submit" onclick="openSelectedSafetyGuide()">What to do now</button><button class="emergency-inline" onclick="openSelectedEmergencyHelp()">Emergency Help</button></div>
+  </div>
+</div>
+
+<div id="methodModal" class="modal-overlay">
+  <div class="modal-box method-box">
+    <button class="close-modal" onclick="closeMethodPanel()" aria-label="Close">×</button>
+    <h3><i class="fa-solid fa-database" style="color:#38bdf8;"></i> Data & Method</h3>
+    <div id="methodHealth" class="method-health">Loading current data status…</div>
+    <div class="method-section"><b>Current rainfall</b><p>IMD is the primary integration when configured. Open‑Meteo is a clearly labelled live fallback. Observed 1h, 24h and completed 7-day windows are stored separately from forecast rainfall.</p></div>
+    <div class="method-section"><b>Historical climate simulation</b><p>NASA POWER Daily rainfall data supplies historical/backfill data. Simulation uses the nearest source-station monthly climate value; it is not a live forecast.</p></div>
+    <div class="method-section"><b>Terrain and screening</b><p>Nearest available terrain-grid elevation/slope plus rainfall drive a prototype model score and a separate current rainfall-and-terrain screen. Neither is an official warning or calibrated real-world landslide probability.</p></div>
+    <div class="method-links"><a href="https://api.imd.gov.in/public/api_reference.html" target="_blank" rel="noopener">IMD API reference ↗</a><a href="https://power.larc.nasa.gov/docs/services/api/temporal/daily/" target="_blank" rel="noopener">NASA POWER Daily ↗</a><a href="https://112.gov.in/" target="_blank" rel="noopener">India Emergency 112 ↗</a></div>
+  </div>
+</div>
+
+<div id="emergencyModal" class="modal-overlay">
+  <div class="modal-box emergency-box">
+    <button class="close-modal" onclick="closeEmergencyHelp()" aria-label="Close">×</button>
+    <h3><i class="fa-solid fa-phone-volume" style="color:#ef4444;"></i> Emergency Help</h3>
+    <p id="emergencyLocation">For immediate danger, call the official unified emergency number.</p>
+    <a class="call-112" href="tel:112"><i class="fa-solid fa-phone"></i> CALL 112</a>
+    <p><b>112</b> connects Police, Fire, Medical and disaster emergency support across India.</p>
+    <div id="emergencyContacts" class="emergency-contacts"></div>
+    <p class="report-note">Use only for a real emergency. District-specific contacts appear here only after official verification.</p>
   </div>
 </div>
 

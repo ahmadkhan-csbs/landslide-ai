@@ -1,0 +1,101 @@
+{
+  "generated_at_utc": "2026-09-05T12:31:03Z",
+  "decision": "NOT_APPROVED_FOR_OPERATIONAL_WARNING",
+  "current_dashboard_artifact": {
+    "path": "ml_model\\landslide_model_v2.pkl",
+    "status": "experimental_v2_in_use",
+    "sha256": "e5a5b37437032f6c88d27582cccd6a0e4345ddfefb1ebf165a2ab3a9713c1a2e"
+  },
+  "v3_candidate_artifacts": [
+    {
+      "path": "ml_model\\landslide_model_v3_candidate.pkl",
+      "status": "candidate_not_deployed",
+      "sha256": "4dd8b07a437eb555c02f38486a95c33e5d9c5a5ada3be1583f4499ed30d3e5c7"
+    },
+    {
+      "path": "ml_model\\landslide_model_v3_calibrated_candidate.pkl",
+      "status": "candidate_not_deployed",
+      "sha256": "a8f8ee5f20220a3107077649f7a55a0c71dea035799d673af911086d1b3d3b6c"
+    }
+  ],
+  "evidence_inputs": {
+    "training_data": "data\\final_training_data_v3.csv",
+    "training_data_sha256": "47e7c9ec8128a42a7a73795d378d9a3a505c7f73b753a3843232b3260e4fada5",
+    "rows": 840,
+    "years": [
+      2007,
+      2016
+    ],
+    "spatial_blocks": 95
+  },
+  "research_metrics_only": {
+    "temporal_holdout_2015_2016": {
+      "rows": 240,
+      "roc_auc": 0.9152,
+      "average_precision": 0.9139,
+      "precision_at_0_5": 0.844,
+      "recall_at_0_5": 0.7667,
+      "confusion_matrix_at_0_5": [
+        [
+          103,
+          17
+        ],
+        [
+          28,
+          92
+        ]
+      ]
+    },
+    "spatial_out_of_fold": {
+      "rows": 840,
+      "roc_auc": 0.8392,
+      "average_precision": 0.8359,
+      "precision_at_0_5": 0.8376,
+      "recall_at_0_5": 0.6262,
+      "confusion_matrix_at_0_5": [
+        [
+          369,
+          51
+        ],
+        [
+          157,
+          263
+        ]
+      ]
+    },
+    "spatial_fold_recall_range": {
+      "minimum": 0.3125,
+      "maximum": 0.8519
+    },
+    "sensitivity_first_candidate_policy": {
+      "threshold": 0.14,
+      "precision": 0.6648,
+      "recall": 0.8595,
+      "confusion_matrix": [
+        [
+          238,
+          182
+        ],
+        [
+          59,
+          361
+        ]
+      ]
+    }
+  },
+  "blockers": [
+    "Controls are background_no_record, not confirmed no-landslide observations.",
+    "The evaluated dataset covers 2007\u20132016; it is not an independent 2025\u20132026 operational validation set.",
+    "Spatial-fold recall varies materially; the lowest fold recall at score threshold 0.5 is below an operational safety standard.",
+    "Scores come from a balanced case-control sample and are not real-world landslide probabilities.",
+    "No government-approved alert threshold, local expert sign-off, or representative population denominator is recorded."
+  ],
+  "allowed_use": "Research demonstration and experimental screening only; do not issue evacuation, public warning, or official probability.",
+  "promotion_requirements": [
+    "Verified contemporary NER landslide-event dataset",
+    "Representative non-event denominator",
+    "Independent temporal and spatial validation",
+    "State/IMD/domain-expert review",
+    "Approved alert operating policy and monitored pilot"
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "dataset": {
+    "path": "data\\final_training_data_v3.csv",
+    "rows": 840,
+    "years": [
+      2007,
+      2016
+    ],
+    "target": "event_observed",
+    "control_caveat": "Controls are background_no_record, not confirmed no-landslide observations."
+  },
+  "temporal_holdout": {
+    "train_years": [
+      2007,
+      2014
+    ],
+    "test_years": [
+      2015,
+      2016
+    ],
+    "train_rows": 600,
+    "test_rows": 240,
+    "rows": 240,
+    "positive_rate": 0.5,
+    "roc_auc": 0.9152,
+    "average_precision": 0.9139,
+    "brier_score": 0.123,
+    "accuracy_at_0_5": 0.8125,
+    "precision_at_0_5": 0.844,
+    "recall_at_0_5": 0.7667,
+    "f1_at_0_5": 0.8035,
+    "confusion_matrix_at_0_5": [
+      [
+        103,
+        17
+      ],
+      [
+        28,
+        92
+      ]
+    ]
+  },
+  "spatial_blocked_cv": {
+    "block_definition": "floor(latitude)_floor(longitude), approximately 1 degree",
+    "unique_spatial_blocks": 95,
+    "folds": [
+      {
+        "fold": 1,
+        "train_rows": 669,
+        "test_rows": 171,
+        "test_spatial_blocks": 21,
+        "rows": 171,
+        "positive_rate": 0.4854,
+        "roc_auc": 0.9259,
+        "average_precision": 0.9199,
+        "brier_score": 0.1142,
+        "accuracy_at_0_5": 0.848,
+        "precision_at_0_5": 0.9014,
+        "recall_at_0_5": 0.7711,
+        "f1_at_0_5": 0.8312,
+        "confusion_matrix_at_0_5": [
+          [
+            81,
+            7
+          ],
+          [
+            19,
+            64
+          ]
+        ]
+      },
+      {
+        "fold": 2,
+        "train_rows": 672,
+        "test_rows": 168,
+        "test_spatial_blocks": 17,
+        "rows": 168,
+        "positive_rate": 0.5119,
+        "roc_auc": 0.8232,
+        "average_precision": 0.8635,
+        "brier_score": 0.1746,
+        "accuracy_at_0_5": 0.7381,
+        "precision_at_0_5": 0.7625,
+        "recall_at_0_5": 0.7093,
+        "f1_at_0_5": 0.7349,
+        "confusion_matrix_at_0_5": [
+          [
+            63,
+            19
+          ],
+          [
+            25,
+            61
+          ]
+        ]
+      },
+      {
+        "fold": 3,
+        "train_rows": 675,
+        "test_rows": 165,
+        "test_spatial_blocks": 17,
+        "rows": 165,
+        "positive_rate": 0.4848,
+        "roc_auc": 0.7509,
+        "average_precision": 0.6805,
+        "brier_score": 0.2367,
+        "accuracy_at_0_5": 0.5939,
+        "precision_at_0_5": 0.6757,
+        "recall_at_0_5": 0.3125,
+        "f1_at_0_5": 0.4274,
+        "confusion_matrix_at_0_5": [
+          [
+            73,
+            12
+          ],
+          [
+            55,
+            25
+          ]
+        ]
+      },
+      {
+        "fold": 4,
+        "train_rows": 676,
+        "test_rows": 164,
+        "test_spatial_blocks": 21,
+        "rows": 164,
+        "positive_rate": 0.4939,
+        "roc_auc": 0.9124,
+        "average_precision": 0.9024,
+        "brier_score": 0.1235,
+        "accuracy_at_0_5": 0.8476,
+        "precision_at_0_5": 0.8415,
+        "recall_at_0_5": 0.8519,
+        "f1_at_0_5": 0.8466,
+        "confusion_matrix_at_0_5": [
+          [
+            70,
+            13
+          ],
+          [
+            12,
+            69
+          ]
+        ]
+      },
+      {
+        "fold": 5,
+        "train_rows": 668,
+        "test_rows": 172,
+        "test_spatial_blocks": 19,
+        "rows": 172,
+        "positive_rate": 0.5233,
+        "roc_auc": 0.765,
+        "average_precision": 0.8337,
+        "brier_score": 0.2254,
+        "accuracy_at_0_5": 0.7326,
+        "precision_at_0_5": 1.0,
+        "recall_at_0_5": 0.4889,
+        "f1_at_0_5": 0.6567,
+        "confusion_matrix_at_0_5": [
+          [
+            82,
+            0
+          ],
+          [
+            46,
+            44
+          ]
+        ]
+      }
+    ],
+    "out_of_fold": {
+      "rows": 840,
+      "positive_rate": 0.5,
+      "roc_auc": 0.8392,
+      "average_precision": 0.8359,
+      "brier_score": 0.1749,
+      "accuracy_at_0_5": 0.7524,
+      "precision_at_0_5": 0.8376,
+      "recall_at_0_5": 0.6262,
+      "f1_at_0_5": 0.7166,
+      "confusion_matrix_at_0_5": [
+        [
+          369,
+          51
+        ],
+        [
+          157,
+          263
+        ]
+      ]
+    }
+  },
+  "candidate_artifact": "ml_model\\landslide_model_v3_candidate.pkl",
+  "status": "candidate_not_deployed"
+}

@@ -1,0 +1,10 @@
+{
+  "artifact_status": "candidate_not_deployed",
+  "model_artifact": "ml_model\\landslide_model_v3_calibrated_candidate.pkl",
+  "score_name": "calibrated_relative_event_score",
+  "score_is_real_world_probability": false,
+  "warning_threshold": 0.14,
+  "selection_rule": "Highest spatial-OOF threshold with recall >= 85%",
+  "validation_scope": "5-fold spatially blocked out-of-fold evaluation",
+  "deployment_guardrail": "Do not deploy until a representative non-event denominator, local expert review, and alert-operating policy are available."
+}

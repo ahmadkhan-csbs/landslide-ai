@@ -1,0 +1,17 @@
+{
+  "india_ner_bbox_events": 442,
+  "excluded_low_or_unknown_accuracy": 22,
+  "excluded_invalid_dates": 0,
+  "confirmed_events_after_filters": 420,
+  "rainfall_period": [
+    2007,
+    2016
+  ],
+  "positive_rows": 420,
+  "background_control_rows": 420,
+  "total_rows": 840,
+  "control_min_distance_km": 50.0,
+  "target_name": "event_observed",
+  "control_interpretation": "No catalogued event in the same year/month; not a confirmed no-landslide label.",
+  "training_warning": "Use spatial and temporal validation before training; do not present accuracy as operational warning performance."
+}

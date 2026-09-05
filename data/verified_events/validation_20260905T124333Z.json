@@ -1,0 +1,10 @@
+{
+  "input": "C:\\Users\\khanm\\Desktop\\landslide-ai\\data\\verified_events\\ner_verified_events.csv",
+  "checked_at_utc": "2026-09-05T12:43:33Z",
+  "rows_read": 0,
+  "valid_rows": 0,
+  "error_count": 0,
+  "errors": [],
+  "decision": "VALID_FOR_MANUAL_RESEARCH_USE",
+  "training_action": "NONE \u2014 this validation command never retrains or promotes a model."
+}

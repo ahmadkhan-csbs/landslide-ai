@@ -5,3 +5,4 @@ xgboost
 matplotlib
 fastapi
 uvicorn
+requests
