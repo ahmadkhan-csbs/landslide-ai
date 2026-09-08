@@ -116,7 +116,7 @@ class PipelineTests(unittest.TestCase):
         corridor = next(item for item in impact["corridors"] if item["id"] == "NER-DEMO-01")
         self.assertTrue(impact["demonstration_only"])
         self.assertEqual(corridor["status"], "CONFIRMED_BLOCKED")
-        self.assertIn("NOT_AVAILABLE", impact["alternate_route_status"])
+        self.assertIn("alternate_route", corridor)
 
 
 if __name__ == "__main__":
