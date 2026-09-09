@@ -503,23 +503,22 @@ def get_alerts(use_live: bool = True, month: int = None):
     alerts = []
     for c in CITIES:
         r = get_risk(c["lat"], c["lon"], month=simulation_month, use_live=use_live)
-        alerts.append({
-            "name": c["name"], "lat": c["lat"], "lon": c["lon"],
-             "state": c.get("state", ""), 
-            "risk": r["risk"], "level": r["level"],
-            "screening_level_label": r["screening_level_label"],
-            "rainfall_mm": r["rainfall"],
-            "elevation_m": r["elevation"],
-            "slope_pct": r["slope"],
-            "data_source": r["data_source"],
-            "rainfall_source": r["rainfall_source"],
-            "rainfall_station": r["rainfall_station"],
-            "rainfall_1h_mm": r["rainfall_1h"], "rainfall_24h_mm": r["rainfall_24h"],
-            "forecast_rainfall_mm": r["forecast_rainfall"], "weather_status": r["weather_status"],
-            "weather_fetched_at_utc": r["weather_fetched_at_utc"],
+        alert_item = {
+            "name": c["name"], 
+            "lat": c["lat"], 
+            "lon": c["lon"],
+            "state": c.get("state", ""), 
             "simulation_month": simulation_month if not use_live else None,
-            "risk_interpretation": r["risk_interpretation"],
-        })
+        }
+        # Update with all advanced metrics (susceptibility_score, soil_moisture, pred_24h, etc.)
+        alert_item.update(r)
+        
+        # Keep backward compatibility aliases used by older UI parts if any
+        alert_item["rainfall_mm"] = r.get("rainfall", 0)
+        alert_item["elevation_m"] = r.get("elevation", 0)
+        alert_item["slope_pct"] = r.get("slope", 0)
+        
+        alerts.append(alert_item)
     return alerts
 
 

@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "lat": 26.144169147608956,
+    "lon": 91.73373109281107,
+    "description": "Road/Highway: NH310. ROAD TUT GAYA H",
+    "severity": "HIGH",
+    "reporter": "ahmad",
+    "reporter_phone": "09117573934",
+    "incident_type": "ROAD_BLOCKED",
+    "people_at_risk": 1,
+    "photo_filename": "7d14d4d2686b48b2881e0adb385c9164.png",
+    "reference_id": "NER-20260909-00001",
+    "verification_status": "UNVERIFIED",
+    "delivery_status": "RECEIVED_LOCALLY_NOT_DISPATCHED",
+    "time": "2026-09-09T23:40:22+05:30",
+    "ml_risk": 15.9,
+    "ml_level": "LOW"
+  },
+  {
+    "id": 2,
+    "lat": 25.693889756185822,
+    "lon": 92.16141079913089,
+    "description": "Road/Highway: NH310. ROAD TUT GAYA H",
+    "severity": "HIGH",
+    "reporter": "ahmad",
+    "reporter_phone": "09117573934",
+    "incident_type": "ROAD_BLOCKED",
+    "people_at_risk": 2,
+    "photo_filename": "dc35de391ff74f48a40cb34f5bde2d7f.png",
+    "reference_id": "NER-20260909-00002",
+    "verification_status": "UNVERIFIED",
+    "delivery_status": "RECEIVED_LOCALLY_NOT_DISPATCHED",
+    "time": "2026-09-09T23:47:51+05:30",
+    "ml_risk": 19.4,
+    "ml_level": "LOW"
+  }
+]
