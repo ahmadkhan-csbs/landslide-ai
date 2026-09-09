@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Header, Request, Response
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import pandas as pd
@@ -216,9 +217,9 @@ def get_risk(lat, lon, month=None, use_live=True):
     
     # MODEL B: Trigger Probability (Dynamic Factors)
     # Using live 1h, 24h, 72h, and 7-day cumulative rainfall
-    r_24h = live_rain.get("rainfall_24h", rainfall) if live_rain else rainfall
+    r_24h = (live_rain.get("rainfall_24h") or rainfall) if live_rain else rainfall
     r_7d = rainfall_window_total if rainfall_window_total else (rainfall * 7)
-    forecast_rain = live_rain.get("forecast_rainfall", 0) if live_rain else 0
+    forecast_rain = (live_rain.get("forecast_rainfall") or 0) if live_rain else 0
     
     trigger_prob = min(100.0, (r_24h * 1.5) + (r_7d * 0.3))
     
@@ -333,10 +334,6 @@ def get_risk(lat, lon, month=None, use_live=True):
         "main_reason": main_reason,
     }
 
-
-@app.get("/")
-def home():
-    return {"message": "Landslide Early Warning API - NER (Model v2)", "status": "running"}
 
 
 @app.get("/data-health")
@@ -574,13 +571,33 @@ import uuid
 import hmac
 import hashlib
 import smtplib
+from fastapi.staticfiles import StaticFiles
 from email.message import EmailMessage
 
-REPORTS_FILE = os.path.join(BASE_DIR, "reports.json")
+REPORTS_FILE = os.path.join(BASE_DIR, "..", "data", "citizen_reports.json")
 UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
-AUDIT_FILE = os.path.join(BASE_DIR, "audit.json")
+DASHBOARD_DIR = os.path.join(BASE_DIR, "..", "dashboard")
+os.makedirs(UPLOADS_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+app.mount("/assets", StaticFiles(directory=DASHBOARD_DIR), name="dashboard_assets")
 CONNECTIVITY_SEED_FILE = os.path.join(BASE_DIR, "..", "data", "ner_connectivity_demo.json")
 
+
+@app.get("/")
+def serve_frontend():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
+
+@app.get("/sw.js")
+def serve_service_worker():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "sw.js"), media_type="application/javascript")
+
+@app.get("/script.js")
+def serve_script():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "script.js"), media_type="application/javascript")
+
+@app.get("/style.css")
+def serve_style():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "style.css"), media_type="text/css")
 
 class CitizenReport(BaseModel):
     lat: float = Field(ge=21.0, le=29.5, description="Latitude within demonstrated NER coverage")
@@ -591,7 +608,11 @@ class CitizenReport(BaseModel):
     reporter_phone: str = Field(default="", max_length=25)
     incident_type: Literal["LANDSLIDE", "ROAD_BLOCKED", "SLOPE_CRACK", "PROPERTY_DAMAGE", "DEBRIS_FLOW", "OTHER"] = "LANDSLIDE"
     people_at_risk: int = Field(default=0, ge=0, le=10000)
-    photo_data_url: str = Field(default="", max_length=7_000_000)
+    photo_data_url: str = Field(default="", max_length=25_000_000)
+
+class SubscriptionRequest(BaseModel):
+    phone: str = Field(max_length=20)
+    district: str = Field(max_length=100)
 
 def load_reports():
     if os.path.exists(REPORTS_FILE):
@@ -603,26 +624,29 @@ def load_reports():
             raise HTTPException(status_code=500, detail="Stored reports could not be read.")
     return []
 
-def save_photo(data_url: str) -> str | None:
-    """Accept only a small, browser-produced image data URL; never execute uploads."""
+def save_media(data_url: str) -> str | None:
+    """Accept small browser-produced image or video data URL."""
     if not data_url:
         return None
-    allowed = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+    allowed = {
+        "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp",
+        "video/mp4": ".mp4", "video/webm": ".webm"
+    }
     try:
         header, encoded = data_url.split(",", 1)
         media_type = header.split(";", 1)[0].replace("data:", "")
         if media_type not in allowed or ";base64" not in header:
-            raise ValueError("Only JPG, PNG, or WebP photos are accepted.")
+            raise ValueError("Only JPG, PNG, WebP, MP4, or WebM formats are accepted.")
         content = base64.b64decode(encoded, validate=True)
     except (ValueError, binascii.Error) as exc:
-        raise HTTPException(status_code=422, detail="Invalid photo upload.") from exc
-    if len(content) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=422, detail="Photo must be 5 MB or smaller.")
+        raise HTTPException(status_code=422, detail="Invalid media upload.") from exc
+    if len(content) > 15 * 1024 * 1024:
+        raise HTTPException(status_code=422, detail="Media must be 15 MB or smaller.")
     os.makedirs(UPLOADS_DIR, exist_ok=True)
     filename = f"{uuid.uuid4().hex}{allowed[media_type]}"
     path = os.path.join(UPLOADS_DIR, filename)
-    with open(path, "xb") as image_file:
-        image_file.write(content)
+    with open(path, "xb") as media_file:
+        media_file.write(content)
     return filename
 
 
@@ -637,7 +661,10 @@ def add_report(report: CitizenReport, request: Request):
     recent_attempts.append(now)
     _report_attempts[address] = recent_attempts
     r = get_risk(report.lat, report.lon)
-    photo_filename = save_photo(report.photo_data_url)
+    saved_filename = None
+    if report.photo_data_url:
+        saved_filename = save_media(report.photo_data_url)
+    report.photo_data_url = ""
     with _reports_lock:
         reports = load_reports()
         next_id = max((item.get("id", 0) for item in reports), default=0) + 1
@@ -651,7 +678,7 @@ def add_report(report: CitizenReport, request: Request):
             "reporter_phone": report.reporter_phone.strip(),
             "incident_type": report.incident_type,
             "people_at_risk": report.people_at_risk,
-            "photo_filename": photo_filename,
+            "photo_filename": saved_filename,
             "reference_id": f"NER-{datetime.now().strftime('%Y%m%d')}-{next_id:05d}",
             "verification_status": "UNVERIFIED",
             "delivery_status": "RECEIVED_LOCALLY_NOT_DISPATCHED",
@@ -665,6 +692,38 @@ def add_report(report: CitizenReport, request: Request):
             json.dump(reports, f, indent=2, ensure_ascii=False)
         os.replace(temp_file, REPORTS_FILE)
     return {"status": "received", "message": "Report received by this website. It has not been dispatched to authorities.", "report": new_report}
+
+
+@app.post("/subscribe")
+def subscribe_alerts(sub: SubscriptionRequest):
+    """Subscribe to SMS alerts for a district."""
+    message = f"Welcome to NER Landslide AI. You are subscribed to alerts for {sub.district}. (SIH Demo)"
+    
+    # If API key exists, send real SMS
+    if FAST2SMS_API_KEY:
+        try:
+            url = "https://www.fast2sms.com/dev/bulkV2"
+            querystring = {
+                "authorization": FAST2SMS_API_KEY,
+                "message": message,
+                "language": "english",
+                "route": "q",
+                "numbers": sub.phone
+            }
+            headers = {'cache-control': "no-cache"}
+            response = requests.request("GET", url, headers=headers, params=querystring)
+            if response.status_code == 200:
+                print(f"[SMS DISPATCHED] Real SMS sent to {sub.phone}")
+            else:
+                print(f"[SMS ERROR] Failed to send SMS: {response.text}")
+        except Exception as e:
+            print(f"[SMS EXCEPTION] {e}")
+            return {"status": "error", "message": "Failed to send real SMS."}
+    else:
+        # Mock mode for hackathon presentation without API key
+        print(f"\n{'='*50}\n[MOCK SMS DISPATCH]\nTo: {sub.phone}\nMessage: {message}\n{'='*50}\n")
+    
+    return {"status": "success", "message": f"Successfully subscribed for {sub.district}"}
 
 
 @app.get("/reports")

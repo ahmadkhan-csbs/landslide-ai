@@ -9,6 +9,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -139,7 +143,7 @@
     </div>
     <input id="repPeople" type="number" min="0" max="10000" value="0" placeholder="People at immediate risk (optional)">
     <input id="repPhone" type="tel" maxlength="25" placeholder="Phone number (optional; private)">
-    <label class="photo-label">Photo (optional, JPG/PNG/WebP, max 5 MB)<input id="repPhoto" type="file" accept="image/jpeg,image/png,image/webp"></label>
+    <label class="photo-label" data-i18n="mediaLabel">Photo/Video (optional, JPG/PNG/MP4/WebM, max 15 MB)<input id="repPhoto" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"></label>
     <p class="report-note">Your report is saved as <b>unverified</b>. It is not automatically sent to authorities.</p>
     <select id="repSev">
       <option value="LOW">Low - chhoti dikhawat</option>
@@ -252,5 +256,14 @@
 <div class="toast" id="toast"></div>
 
 <script src="script.js?v=2"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registered', reg))
+        .catch(err => console.error('Service Worker registration failed', err));
+    });
+  }
+</script>
 </body>
 </html>

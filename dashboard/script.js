@@ -1,6 +1,6 @@
 // ===== MAP SETUP =====
 const map = L.map('map').setView([26.0, 92.5], 6.5);
-const API_BASE = 'http://127.0.0.1:8010';
+const API_BASE = '';
 
 const googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google Maps' });
 const googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'] });
@@ -179,14 +179,14 @@ function renderAlerts() {
       className: alert.level === 'HIGH' ? 'high-risk-pulse' : ''
     }).addTo(map).bindPopup(
       '<b>' + escapeHtml(alert.name) + '</b> (' + monthStr + ')<br>' +
-      '<b>Final Landslide Probability: <span style="font-size:14px; color:' + color + ';">' + alert.risk + '%</span></b><br>' +
-      'Terrain Susceptibility: ' + (alert.susceptibility_score || 0) + '%<br>' +
-      'Rainfall Trigger Probability: ' + (alert.trigger_prob || 0) + '%<br><hr style="border:0; border-top:1px solid #334; margin:4px 0;">' +
-      '<b>Prediction Windows:</b><br>' +
-      'NEXT 24 HOURS: <b>' + (alert.pred_24h || 0) + '%</b><br>' +
-      'NEXT 48 HOURS: <b>' + (alert.pred_48h || 0) + '%</b><br>' +
-      'NEXT 72 HOURS: <b>' + (alert.pred_72h || 0) + '%</b><br><hr style="border:0; border-top:1px solid #334; margin:4px 0;">' +
-      'Primary Trigger: ' + escapeHtml(alert.main_reason || 'Unknown') + '<br>' +
+      '<b>' + t('finalProb') + ': <span style="font-size:14px; color:' + color + ';">' + alert.risk + '%</span></b><br>' +
+      t('terrainSusc') + ': ' + (alert.susceptibility_score || 0) + '%<br>' +
+      t('rainfallTrig') + ': ' + (alert.trigger_prob || 0) + '%<br><hr style="border:0; border-top:1px solid #334; margin:4px 0;">' +
+      '<b>' + t('predWindows') + ':</b><br>' +
+      t('next24h') + ': <b>' + (alert.pred_24h || 0) + '%</b><br>' +
+      t('next48h') + ': <b>' + (alert.pred_48h || 0) + '%</b><br>' +
+      t('next72h') + ': <b>' + (alert.pred_72h || 0) + '%</b><br><hr style="border:0; border-top:1px solid #334; margin:4px 0;">' +
+      t('primaryTrigger') + ': ' + escapeHtml(alert.main_reason || 'Unknown') + '<br>' +
       '<small>' + escapeHtml(alert.data_source || '') + '</small>'
     );
     markers.push(marker);
@@ -205,20 +205,20 @@ function renderAlerts() {
     card.className = 'alert-card ' + alert.level;
     card.innerHTML =
       '<div class="city">' + escapeHtml(alert.name) + ' <span style="float:right; font-size:9px; color:#94a3b8;">' + monthStr + '</span></div>' +
-      '<div class="risk-line"><span>Landslide Probability: <b style="font-size:14px;">' + alert.risk + '%</b></span>' +
-      '<span class="badge ' + alert.level + '">Model Confidence: 86%</span></div>' +
+      '<div class="risk-line"><span>' + t('finalProb') + ': <b style="font-size:14px;">' + alert.risk + '%</b></span>' +
+      '<span class="badge ' + alert.level + '">' + t('modelConf') + ': 86%</span></div>' +
       '<div class="terrain-line" style="display:flex; justify-content:space-between; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.05);">' +
       '<div>24H: <b>' + (alert.pred_24h || 0) + '%</b></div>' +
       '<div>48H: <b>' + (alert.pred_48h || 0) + '%</b></div>' +
       '<div>72H: <b>' + (alert.pred_72h || 0) + '%</b></div></div>';
-    card.innerHTML += '<div class="score-explainer" style="margin-top:6px;"><b>Trigger:</b> ' + escapeHtml(alert.main_reason || 'Unknown') + '</div>';
+    card.innerHTML += '<div class="score-explainer" style="margin-top:6px;"><b>' + t('trigger') + ':</b> ' + escapeHtml(alert.main_reason || 'Unknown') + '</div>';
     const emergencyButton = document.createElement('button');
     emergencyButton.className = 'card-emergency';
-    emergencyButton.innerHTML = '<i class="fa-solid fa-phone-volume"></i> Emergency help for this city';
+    emergencyButton.innerHTML = '<i class="fa-solid fa-phone-volume"></i> ' + t('emergencyForCity');
     emergencyButton.onclick = event => { event.stopPropagation(); openEmergencyHelp(alert); };
     const guideButton = document.createElement('button');
     guideButton.className = 'card-guide';
-    guideButton.innerHTML = '<i class="fa-solid fa-person-shelter"></i> What to do now';
+    guideButton.innerHTML = '<i class="fa-solid fa-person-shelter"></i> ' + t('whatToDo');
     guideButton.onclick = event => { event.stopPropagation(); openSafetyGuide(alert); };
     const actions = document.createElement('div');
     actions.className = 'card-actions';
@@ -274,7 +274,7 @@ map.on('click', function(e) {
 function fileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     if (!file) return resolve('');
-    if (file.size > 5 * 1024 * 1024) return reject(new Error('Photo 5 MB se chhoti honi chahiye.'));
+    if (file.size > 15 * 1024 * 1024) return reject(new Error('Photo/Video 15 MB se chhoti honi chahiye.'));
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(new Error('Photo read nahi ho paayi.'));
@@ -323,6 +323,16 @@ function drawReports() {
     .then(r => r.json())
     .then(reports => {
       reports.filter(rp => (rp.verification_status || 'UNVERIFIED') === 'UNVERIFIED').forEach(rp => {
+        let mediaHtml = '';
+        if (rp.photo_filename) {
+          const mediaUrl = API_BASE + '/uploads/' + rp.photo_filename;
+          if (rp.photo_filename.endsWith('.mp4') || rp.photo_filename.endsWith('.webm')) {
+            mediaHtml = '<br><video controls style="width:100%; max-height:200px; margin-top:8px; border-radius:4px; background:#000;"><source src="' + mediaUrl + '"></video>';
+          } else {
+            mediaHtml = '<br><img src="' + mediaUrl + '" style="width:100%; max-height:200px; object-fit:cover; margin-top:8px; border-radius:4px;">';
+          }
+        }
+        
         const marker = L.marker([rp.lat, rp.lon], {
           icon: L.divIcon({className:'', html:'<div class="incident-marker" title="Unverified citizen report">⚠</div>', iconSize: [30, 30], iconAnchor: [15, 15]})
         }).addTo(map).bindPopup(
@@ -330,6 +340,7 @@ function drawReports() {
           '<br>Status: <b>' + escapeHtml(rp.verification_status || 'UNVERIFIED') + '</b><br>' + escapeHtml(rp.description) +
           '<br>Severity: <b>' + rp.severity + '</b>' +
           '<br>🤖 ML Risk yahan: ' + rp.ml_risk + '% (' + rp.ml_level + ')' +
+          mediaHtml +
           '<br><small>Citizen report · ' + escapeHtml(rp.time) + '</small>'
         );
         reportMarkers.push(marker);
@@ -752,19 +763,32 @@ function toggleTheme() {
 if (localStorage.getItem('theme') === 'light') toggleTheme();
 
 // ===== LANGUAGE SWITCHER (EN/HI) =====
+let currentLang = 'en';
+
 const translations = {
   en: {
-    dataMethod: '<i class="fa-solid fa-database"></i> Data & Method', emergencyHelp: '<i class="fa-solid fa-phone-volume"></i> Emergency Help', trackReport: '<i class="fa-solid fa-magnifying-glass"></i> Track Report', reportIncident: '<i class="fa-solid fa-triangle-exclamation"></i> Report Incident', resetMapView: '<i class="fa-solid fa-rotate-left"></i> Reset Map View', liveMode: '<i class="fa-solid fa-tower-broadcast"></i> LIVE', simMode: '<i class="fa-solid fa-cloud-showers-heavy"></i> MONSOON SIM', getSmsAlerts: '<i class="fa-solid fa-envelope-open-text"></i> Get SMS/WhatsApp Alerts', showCitizenReports: 'Show unverified citizen incident reports', showRoadConnectivity: 'Show connectivity demonstration corridors', showRainfallHeatmap: 'Show Rainfall Heatmap Layer', showEvacRoutes: 'Show Safe Evacuation Routes', locationIntell: 'Location Intelligence', whatToDo: 'What to do now', emergencyHelpBtn: 'Emergency Help', subscribeTitle: 'Get Priority Alerts', subscribeDesc: 'Receive instant WhatsApp & SMS alerts when risk level changes for your district.', subscribeBtn: 'Subscribe Now', subscribeNote: 'Note: This is a demonstration feature for SIH 2026. No real SMS will be sent.'
+    dataMethod: '<i class="fa-solid fa-database"></i> Data & Method', emergencyHelp: '<i class="fa-solid fa-phone-volume"></i> Emergency Help', trackReport: '<i class="fa-solid fa-magnifying-glass"></i> Track Report', reportIncident: '<i class="fa-solid fa-triangle-exclamation"></i> Report Incident', resetMapView: '<i class="fa-solid fa-rotate-left"></i> Reset Map View', liveMode: '<i class="fa-solid fa-tower-broadcast"></i> LIVE', simMode: '<i class="fa-solid fa-cloud-showers-heavy"></i> MONSOON SIM', getSmsAlerts: '<i class="fa-solid fa-envelope-open-text"></i> Get SMS/WhatsApp Alerts', showCitizenReports: 'Show unverified citizen incident reports', showRoadConnectivity: 'Show connectivity demonstration corridors', showRainfallHeatmap: 'Show Rainfall Heatmap Layer', showEvacRoutes: 'Show Safe Evacuation Routes', locationIntell: 'Location Intelligence', whatToDo: 'What to do now', emergencyHelpBtn: 'Emergency Help', subscribeTitle: 'Get Priority Alerts', subscribeDesc: 'Receive instant WhatsApp & SMS alerts when risk level changes for your district.', subscribeBtn: 'Subscribe Now', subscribeNote: 'Note: This is a demonstration feature for SIH 2026. No real SMS will be sent.',
+    finalProb: 'Landslide Probability', modelConf: 'Model Confidence', trigger: 'Trigger', emergencyForCity: 'Emergency help for this city', terrainSusc: 'Terrain Susceptibility', rainfallTrig: 'Rainfall Trigger Probability', predWindows: 'Prediction Windows', next24h: 'NEXT 24 HOURS', next48h: 'NEXT 48 HOURS', next72h: 'NEXT 72 HOURS', primaryTrigger: 'Primary Trigger', mediaLabel: 'Photo/Video (optional, JPG/PNG/MP4/WebM, max 15 MB)'
   },
   hi: {
-    dataMethod: '<i class="fa-solid fa-database"></i> डेटा और तरीका', emergencyHelp: '<i class="fa-solid fa-phone-volume"></i> आपातकालीन मदद', trackReport: '<i class="fa-solid fa-magnifying-glass"></i> रिपोर्ट ट्रैक करें', reportIncident: '<i class="fa-solid fa-triangle-exclamation"></i> घटना की रिपोर्ट करें', resetMapView: '<i class="fa-solid fa-rotate-left"></i> मैप रीसेट करें', liveMode: '<i class="fa-solid fa-tower-broadcast"></i> लाइव (LIVE)', simMode: '<i class="fa-solid fa-cloud-showers-heavy"></i> मानसून सिमुलेशन', getSmsAlerts: '<i class="fa-solid fa-envelope-open-text"></i> SMS/WhatsApp अलर्ट पाएं', showCitizenReports: 'असत्यापित नागरिक घटना रिपोर्ट दिखाएं', showRoadConnectivity: 'सड़क कनेक्टिविटी कॉरिडोर दिखाएं', showRainfallHeatmap: 'बारिश का हीटमैप दिखाएं', showEvacRoutes: 'सुरक्षित निकासी मार्ग दिखाएं', locationIntell: 'स्थान की जानकारी', whatToDo: 'अब क्या करें?', emergencyHelpBtn: 'आपातकालीन मदद', subscribeTitle: 'अलर्ट प्राप्त करें', subscribeDesc: 'जब आपके जिले का जोखिम स्तर बदलेगा तो तुरंत WhatsApp और SMS अलर्ट प्राप्त करें।', subscribeBtn: 'अभी सब्सक्राइब करें', subscribeNote: 'नोट: यह SIH 2026 के लिए एक डेमो है। कोई असली SMS नहीं भेजा जाएगा।'
+    dataMethod: '<i class="fa-solid fa-database"></i> डेटा और तरीका', emergencyHelp: '<i class="fa-solid fa-phone-volume"></i> आपातकालीन मदद', trackReport: '<i class="fa-solid fa-magnifying-glass"></i> रिपोर्ट ट्रैक करें', reportIncident: '<i class="fa-solid fa-triangle-exclamation"></i> घटना की रिपोर्ट करें', resetMapView: '<i class="fa-solid fa-rotate-left"></i> मैप रीसेट करें', liveMode: '<i class="fa-solid fa-tower-broadcast"></i> लाइव (LIVE)', simMode: '<i class="fa-solid fa-cloud-showers-heavy"></i> मानसून सिमुलेशन', getSmsAlerts: '<i class="fa-solid fa-envelope-open-text"></i> SMS/WhatsApp अलर्ट पाएं', showCitizenReports: 'असत्यापित नागरिक घटना रिपोर्ट दिखाएं', showRoadConnectivity: 'सड़क कनेक्टिविटी कॉरिडोर दिखाएं', showRainfallHeatmap: 'बारिश का हीटमैप दिखाएं', showEvacRoutes: 'सुरक्षित निकासी मार्ग दिखाएं', locationIntell: 'स्थान की जानकारी', whatToDo: 'अब क्या करें?', emergencyHelpBtn: 'आपातकालीन मदद', subscribeTitle: 'अलर्ट प्राप्त करें', subscribeDesc: 'जब आपके जिले का जोखिम स्तर बदलेगा तो तुरंत WhatsApp और SMS अलर्ट प्राप्त करें।', subscribeBtn: 'अभी सब्सक्राइब करें', subscribeNote: 'नोट: यह SIH 2026 के लिए एक डेमो है। कोई असली SMS नहीं भेजा जाएगा।',
+    finalProb: 'भूस्खलन की संभावना', modelConf: 'मॉडल का विश्वास', trigger: 'कारण', emergencyForCity: 'इस शहर के लिए आपातकालीन मदद', terrainSusc: 'इलाके की संवेदनशीलता', rainfallTrig: 'बारिश ट्रिगर संभावना', predWindows: 'भविष्यवाणी समय', next24h: 'अगले 24 घंटे', next48h: 'अगले 48 घंटे', next72h: 'अगले 72 घंटे', primaryTrigger: 'मुख्य कारण', mediaLabel: 'फोटो/वीडियो (वैकल्पिक, JPG/PNG/MP4/WebM, अधिकतम 15 MB)'
   }
 };
+
+function t(key) {
+  return (translations[currentLang] && translations[currentLang][key]) || (translations['en'][key] || key);
+}
+
 function switchLanguage(lang) {
+  currentLang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (translations[lang] && translations[lang][key]) el.innerHTML = translations[lang][key];
   });
+  if (allAlerts && allAlerts.length > 0) {
+    renderAlerts(); // Re-render dynamic cards to apply translation
+  }
 }
 
 // ===== SUBSCRIBE MODAL =====
@@ -787,8 +811,25 @@ function submitSubscription() {
   const dist = document.getElementById('subDistrict').value;
   const phone = document.getElementById('subPhone').value;
   if (!dist || !phone) return alert('Please select a district and enter your phone number.');
-  closeSubscribeModal();
-  showToast('✅ Subscribed successfully! You will receive alerts for ' + dist + '.');
+  
+  fetch(API_BASE + '/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ district: dist, phone: phone })
+  })
+  .then(res => res.json())
+  .then(data => {
+    closeSubscribeModal();
+    if (data.status === 'success') {
+      showToast('✅ Subscribed! You will receive alerts for ' + dist + '.');
+    } else {
+      alert('Error: ' + data.message);
+    }
+  })
+  .catch(err => {
+    console.error('Subscription error:', err);
+    alert('Failed to connect to the server.');
+  });
 }
 
 // ===== HEATMAP LAYER =====
