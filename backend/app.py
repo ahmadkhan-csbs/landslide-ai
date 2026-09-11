@@ -61,6 +61,7 @@ RAIN_CACHE_TTL_SECONDS = 15 * 60
 _rain_cache = {}
 _reports_lock = Lock()
 _report_attempts = {}
+_subscription_attempts = {}
 weather_store = ObservationStore(DATABASE_PATH)
 weather_store.initialise()
 
@@ -207,12 +208,8 @@ def get_risk(lat, lon, month=None, use_live=True):
 
     elevation, slope, nearest_city = get_terrain(lat, lon)
     
-    # ---------------------------------------------------------
-    # DUAL-MODEL ENSEMBLE ENGINE (PHASE 1 ARCHITECTURE)
-    # ---------------------------------------------------------
-    
-    # MODEL A: Terrain Susceptibility (Static Factors)
-    # Using slope (primary) and elevation (secondary) + historical proxy
+    # Supporting indicators remain useful for explanation and time-window
+    # projections, but the trained model owns the displayed risk score.
     susceptibility_score = min(100.0, (slope * 12.0) + (elevation / 100.0))
     
     # MODEL B: Trigger Probability (Dynamic Factors)
@@ -223,14 +220,8 @@ def get_risk(lat, lon, month=None, use_live=True):
     
     trigger_prob = min(100.0, (r_24h * 1.5) + (r_7d * 0.3))
     
-    # FINAL ENSEMBLE PROBABILITY
-    # Heavily weight the trigger if susceptibility is high, otherwise moderate
-    if susceptibility_score > 50:
-        final_prob = (susceptibility_score * 0.3) + (trigger_prob * 0.7)
-    else:
-        final_prob = (susceptibility_score * 0.6) + (trigger_prob * 0.4)
-        
-    final_prob = min(99.9, max(1.0, final_prob))
+    model_probability = float(model.predict_proba(make_input(lat, lon, month, rainfall))[0][1] * 100)
+    final_prob = min(99.9, max(0.0, model_probability))
     
     # 24h / 48h / 72h TIME WINDOW PREDICTIONS
     # 24h prediction heavily relies on current + forecast rain
@@ -292,6 +283,7 @@ def get_risk(lat, lon, month=None, use_live=True):
 
     return {
         "risk": round(final_prob, 1),
+        "model_probability": round(model_probability, 1),
         "level": level,
         "screening_level_label": "Final Landslide Probability",
         "color": color,
@@ -318,12 +310,16 @@ def get_risk(lat, lon, month=None, use_live=True):
         "rainfall_source": rainfall_source,
         "rainfall_station": rain_station,
         "rainfall_station_distance_km": rain_station_distance,
-        "risk_interpretation": "AI-driven ensemble probability indicating real-time hazard.",
+        "risk_interpretation": "Experimental Random Forest screening score; not an official probability or warning.",
         "rainfall_window_days": rainfall_window_days,
         "rainfall_window_total": round(rainfall_window_total, 1) if rainfall_window_total is not None else None,
         "rainfall_1h": live_rain.get("rainfall_1h") if use_live and live_rain else None,
         "rainfall_24h": live_rain.get("rainfall_24h") if use_live and live_rain else None,
         "forecast_rainfall": live_rain.get("forecast_rainfall") if use_live and live_rain else None,
+        # Explicit aliases consumed by the vanilla dashboard alert cards.
+        "rainfall_1h_mm": live_rain.get("rainfall_1h") if use_live and live_rain else None,
+        "rainfall_24h_mm": live_rain.get("rainfall_24h") if use_live and live_rain else None,
+        "forecast_rainfall_mm": live_rain.get("forecast_rainfall") if use_live and live_rain else None,
         "weather_status": live_rain.get("status") if use_live and live_rain else "climate_fallback",
         "weather_fetched_at_utc": live_rain.get("fetched_at_utc") if use_live and live_rain else None,
         "month": month,
@@ -574,6 +570,7 @@ from fastapi.staticfiles import StaticFiles
 from email.message import EmailMessage
 
 REPORTS_FILE = os.path.join(BASE_DIR, "..", "data", "citizen_reports.json")
+AUDIT_FILE = os.path.join(BASE_DIR, "..", "data", "audit_log.json")
 UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
 DASHBOARD_DIR = os.path.join(BASE_DIR, "..", "dashboard")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -585,6 +582,14 @@ CONNECTIVITY_SEED_FILE = os.path.join(BASE_DIR, "..", "data", "ner_connectivity_
 @app.get("/")
 def serve_frontend():
     return FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
+
+@app.get("/index.html")
+def serve_frontend_alias():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
+
+@app.get("/manifest.json")
+def serve_manifest():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "manifest.json"), media_type="application/manifest+json")
 
 @app.get("/sw.js")
 def serve_service_worker():
@@ -598,6 +603,18 @@ def serve_script():
 def serve_style():
     return FileResponse(os.path.join(DASHBOARD_DIR, "style.css"), media_type="text/css")
 
+@app.get("/admin.html")
+def serve_admin_page():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "admin.html"))
+
+@app.get("/admin.css")
+def serve_admin_css():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "admin.css"), media_type="text/css")
+
+@app.get("/admin.js")
+def serve_admin_js():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "admin.js"), media_type="application/javascript")
+
 class CitizenReport(BaseModel):
     lat: float = Field(ge=21.0, le=29.5, description="Latitude within demonstrated NER coverage")
     lon: float = Field(ge=88.0, le=97.0, description="Longitude within demonstrated NER coverage")
@@ -610,7 +627,7 @@ class CitizenReport(BaseModel):
     photo_data_url: str = Field(default="", max_length=25_000_000)
 
 class SubscriptionRequest(BaseModel):
-    phone: str = Field(max_length=20)
+    phone: str = Field(min_length=7, max_length=20, pattern=r"^[0-9+() -]+$")
     district: str = Field(max_length=100)
 
 def load_reports():
@@ -694,8 +711,15 @@ def add_report(report: CitizenReport, request: Request):
 
 
 @app.post("/subscribe")
-def subscribe_alerts(sub: SubscriptionRequest):
+def subscribe_alerts(sub: SubscriptionRequest, request: Request):
     """Subscribe to SMS alerts for a district."""
+    address = request.client.host if request.client else "unknown"
+    now = time()
+    recent_attempts = [stamp for stamp in _subscription_attempts.get(address, []) if now - stamp < 3600]
+    if len(recent_attempts) >= 3:
+        raise HTTPException(status_code=429, detail="Too many subscription requests from this network.")
+    recent_attempts.append(now)
+    _subscription_attempts[address] = recent_attempts
     message = f"Welcome to NER Landslide AI. You are subscribed to alerts for {sub.district}. (SIH Demo)"
     
     # If API key exists, send real SMS

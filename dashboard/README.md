@@ -1,22 +1,13 @@
-# Landslide AI
+# Suraksha Kawach Dashboard
 
-JavaScript/Next.js version of the NER landslide early-warning dashboard.
+The repository's only dashboard is the static dashboard served by FastAPI.
 
 ## Run
 
 From the repository root, run:
 
 ```powershell
-cd dashboard
-npm.cmd install
-npm.cmd run dev
+.\.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 5500
 ```
 
-Open http://localhost:3000.
-
-The app also provides these API routes:
-
-- `/api/alerts` — risk list for monitored NER cities
-- `/api/predict?lat=26.14&lon=91.73&month=7` — risk prediction
-
-Use `npm.cmd` instead of `npm`: the local PowerShell execution policy blocks `npm.ps1`.
+Open http://127.0.0.1:5500/.

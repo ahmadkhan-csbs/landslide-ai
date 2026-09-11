@@ -51,15 +51,15 @@ pip install -r requirements.txt
 
 # 3. Start the Unified Server
 cd backend
-python -m uvicorn app:app --reload
+python -m uvicorn app:app --reload --host 127.0.0.1 --port 5500
 ```
-**Open in Browser:** `http://127.0.0.1:8000/`
+**Open in Browser:** `http://127.0.0.1:5500/` (the only canonical 53-city dashboard)
 
 ### 🌐 Instant Live Sharing (Ngrok)
 To share the live dashboard with judges or your mobile phone during the presentation:
 ```bash
 # In a new terminal window
-ngrok http 8000
+ngrok http 5500
 ```
 
 ## 🔌 API Endpoints (FastAPI)

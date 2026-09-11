@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIH 2026 Judge Preparation Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        .qa-box {
+            background-color: #f8f9fa;
+            border-left: 5px solid #e74c3c;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .qa-box.blue { border-left-color: #3498db; }
+        .qa-box.green { border-left-color: #2ecc71; }
+        .qa-box.purple { border-left-color: #9b59b6; }
+        .qa-box.orange { border-left-color: #e67e22; }
+        .qa-box.teal { border-left-color: #1abc9c; }
+        
+        .question {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .answer {
+            color: #444;
+        }
+        ul {
+            margin-top: 5px;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        strong {
+            color: #2c3e50;
+        }
+        @media print {
+            body { padding: 0; }
+            .qa-box { break-inside: avoid; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🏆 SIH 2026 Judge Preparation Guide</h1>
+    <p style="text-align: center; font-size: 1.1em; color: #7f8c8d;">NER Landslide AI - Potential Questions & Detailed Explanations</p>
+
+    <h2>1. Problem Statement & Impact 🌍</h2>
+    <div class="qa-box blue">
+        <div class="question">Q1: Why did you choose this problem statement, and how is your solution different from existing systems?</div>
+        <div class="answer">
+            <strong>Answer:</strong> North East India (NER) is highly prone to landslides due to its Himalayan terrain and heavy monsoons, causing massive damage and loss of life. Current systems are largely <strong>reactive</strong> (responding after the disaster) and data is fragmented. <br><br>
+            Our solution is <strong>proactive</strong> and <strong>end-to-end</strong>. We differentiate by combining an AI risk engine (Random Forest) for 72-hour early screening, a citizen crowdsourcing portal for ground-truth verification, and an Offline-First PWA (Progressive Web App) that works even during network blackouts in hilly areas.
+        </div>
+    </div>
+
+    <h2>2. Data Sources & Authenticity 📡</h2>
+    <div class="qa-box">
+        <div class="question">Q2: Landslide prediction heavily relies on accurate data. Where are you getting your data from, and how reliable is it?</div>
+        <div class="answer">
+            <strong>Answer:</strong> Our data pipeline is built with redundancy and authenticity in mind:
+            <ul>
+                <li><strong>Historical Training Data:</strong> We trained our ML model on the verified NASA Global Landslide Catalog combined with historical NASA POWER rainfall data.</li>
+                <li><strong>Live Weather Data:</strong> We have a fallback architecture. Our primary goal is to use the <strong>IMD (Indian Meteorological Department)</strong> API for official data. If IMD is down or pending approval, the system gracefully falls back to <strong>Open-Meteo</strong> to ensure 100% uptime.</li>
+                <li><strong>Terrain Data:</strong> We use elevation, slope, and terrain fragility indexes.</li>
+                <li><strong>Disclaimer:</strong> We are transparent that this is an <em>experimental screening tool</em>, and official warnings must come from SDMA/DDMA (State/District Disaster Management Authorities).</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>3. Artificial Intelligence & Machine Learning 🤖</h2>
+    <div class="qa-box green">
+        <div class="question">Q3: Which ML model did you use and why? What are the key features driving the predictions?</div>
+        <div class="answer">
+            <strong>Answer:</strong> We used a <strong>Random Forest algorithm</strong> (scikit-learn). 
+            <ul>
+                <li><strong>Why?</strong> Random Forest is excellent for tabular data, handles non-linear relationships well, and most importantly, it provides <strong>Explainable AI (XAI)</strong>. In disaster management, authorities need to know <em>why</em> an alert is generated.</li>
+                <li><strong>Key Features:</strong> Our model explains the risk breakdown: <strong>Rainfall (57.8%)</strong> is the biggest trigger, followed by <strong>Terrain fragility (22.4%)</strong> and <strong>Location (19.8%)</strong>.</li>
+                <li><em>Tip for judges:</em> Mention that your "Model v3 candidate" is currently blocked from deployment because you prioritize public safety and require rigorous spatial validation and domain expert review before pushing new models.</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>4. Practicality & False Positives 🚨</h2>
+    <div class="qa-box orange">
+        <div class="question">Q4: How do you handle false positives? If the AI predicts a landslide incorrectly, it could cause mass panic.</div>
+        <div class="answer">
+            <strong>Answer:</strong> This is exactly why we built a <strong>Human-in-the-Loop workflow</strong>. 
+            <ol>
+                <li>Our AI provides a "Screening Level" (High/Medium/Low), <strong>not</strong> an official warning.</li>
+                <li>We have a <strong>Citizen Reporting Portal</strong> where locals upload geo-tagged photos/videos of cracks or minor slopes failing.</li>
+                <li>These reports go to a <strong>Local Reviewer Dashboard</strong> (Admin Panel). They default to <code>UNVERIFIED</code>.</li>
+                <li>Only after an admin reviews the evidence, verifies it with local authorities, and manually queues it, is the dispatch sent via our SMTP/Fast2SMS integration. We <strong>never</strong> auto-dispatch mass alerts based solely on AI predictions.</li>
+            </ol>
+        </div>
+    </div>
+
+    <h2>5. Technical Architecture (Offline Capabilities) 📶</h2>
+    <div class="qa-box purple">
+        <div class="question">Q5: In hilly areas like the North East, internet connectivity drops during heavy rains. How will your app work?</div>
+        <div class="answer">
+            <strong>Answer:</strong> We built the frontend as a <strong>Progressive Web App (PWA)</strong>. 
+            <ul>
+                <li>We use <strong>Service Workers</strong> with a Network-First caching strategy.</li>
+                <li>If the network drops, the app still loads from the cache, allowing citizens to view emergency contacts (112, NDRF, SDRF) and safety guidelines.</li>
+                <li><em>Future Scope:</em> We plan to implement an offline queue for citizen reports, which will automatically sync and upload as soon as the user enters a network zone.</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>6. Route & Connectivity Impact 🛣️</h2>
+    <div class="qa-box teal">
+        <div class="question">Q6: How does this help rescue teams (NDRF/SDRF)?</div>
+        <div class="answer">
+            <strong>Answer:</strong> We built a <strong>Road Connectivity Impact Module</strong>. When a landslide happens, it's not just a point on a map; it blocks roads. <br><br>
+            Our system uses GIS data to map incidents to road corridors. It shows rescue teams if a road is <code>OPEN</code>, <code>CAUTION</code>, or <code>BLOCKED</code>. It calculates an "Emergency Priority Score" based on nearby villages, hospitals, and people at risk, and can suggest alternate safe routes that avoid confirmed blocked segments.
+        </div>
+    </div>
+
+    <h2>7. Future Scope & Scalability 🚀</h2>
+    <div class="qa-box">
+        <div class="question">Q7: How do you plan to scale this for production?</div>
+        <div class="answer">
+            <strong>Answer:</strong> While our prototype runs locally with SQLite and FastAPI:
+            <ol>
+                <li><strong>Database:</strong> We will migrate to <strong>PostgreSQL with PostGIS</strong> for advanced spatial queries and zoning.</li>
+                <li><strong>Storage:</strong> Citizen media (photos/mp4) will be pushed to <strong>AWS S3</strong> rather than local storage.</li>
+                <li><strong>Advanced ML:</strong> We plan to train a <strong>U-Net deep learning model</strong> to automatically detect road cracks and anomalies directly from the crowdsourced video uploads.</li>
+                <li><strong>Hardware:</strong> Integrating live IoT Soil-Moisture sensors to add ground-saturation data into our prediction model.</li>
+            </ol>
+        </div>
+    </div>
+
+</body>
+</html>

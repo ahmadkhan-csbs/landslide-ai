@@ -33,8 +33,11 @@ historicalData.forEach(event => {
 });
 
 // Highlight NER Border
-fetch('ner_boundary.geojson')
-  .then(res => res.json())
+fetch('/assets/ner_boundary.geojson')
+  .then(res => {
+    if (!res.ok) throw new Error('NER boundary file unavailable');
+    return res.json();
+  })
   .then(data => {
     L.geoJSON(data, {
       style: { color: '#0ea5e9', weight: 3, fillOpacity: 0.05, dashArray: '10, 10', interactive: false }
@@ -47,6 +50,8 @@ let currentRouteControl = null;
 let markers = [];
 let reportMarkers = [];
 let connectivityLayers = [];
+let connectivityCorridors = [];
+let selectedCorridorLayers = [];
 let allAlerts = [];
 let currentState = 'ALL';
 let currentUseLive = true;
@@ -81,7 +86,10 @@ function loadAlerts(useLive) {
   const selectedMonth = document.getElementById('simMonth').value;
   const url = API_BASE + '/alerts' + (useLive ? '' : '?use_live=false&month=' + encodeURIComponent(selectedMonth));
   fetch(url)
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok) throw new Error('Alerts endpoint returned HTTP ' + r.status);
+      return r.json();
+    })
     .then(alerts => {
       loader.style.display = 'none';  // spinner OFF
       allAlerts = Array.isArray(alerts) ? alerts : [];
@@ -206,7 +214,7 @@ function renderAlerts() {
     card.innerHTML =
       '<div class="city">' + escapeHtml(alert.name) + ' <span style="float:right; font-size:9px; color:#94a3b8;">' + monthStr + '</span></div>' +
       '<div class="risk-line"><span>' + t('finalProb') + ': <b style="font-size:14px;">' + alert.risk + '%</b></span>' +
-      '<span class="badge ' + alert.level + '">' + t('modelConf') + ': 86%</span></div>' +
+      '<span class="badge ' + alert.level + '">' + t('modelConf') + '</span></div>' +
       '<div class="terrain-line" style="display:flex; justify-content:space-between; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.05);">' +
       '<div>24H: <b>' + (alert.pred_24h || 0) + '%</b></div>' +
       '<div>48H: <b>' + (alert.pred_48h || 0) + '%</b></div>' +
@@ -320,7 +328,10 @@ function drawReports() {
   reportMarkers = [];
   if (!document.getElementById('showReports')?.checked) return;
   fetch(API_BASE + '/reports')
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok) throw new Error('Reports endpoint returned HTTP ' + r.status);
+      return r.json();
+    })
     .then(reports => {
       reports.filter(rp => (rp.verification_status || 'UNVERIFIED') === 'UNVERIFIED').forEach(rp => {
         let mediaHtml = '';
@@ -345,6 +356,10 @@ function drawReports() {
         );
         reportMarkers.push(marker);
       });
+    })
+    .catch(() => {
+      // Keep the map usable when the backend is unavailable or served elsewhere.
+      reportMarkers = [];
     });
 }
 
@@ -363,6 +378,8 @@ const SERVICE_POINT_ICONS = {
 function loadConnectivityImpact() {
   connectivityLayers.forEach(layer => map.removeLayer(layer));
   connectivityLayers = [];
+  selectedCorridorLayers.forEach(layer => map.removeLayer(layer));
+  selectedCorridorLayers = [];
   const panel = document.getElementById('connectivityPanel');
   if (!document.getElementById('showConnectivity')?.checked) {
     panel.textContent = 'Connectivity demonstration layer hidden.';
@@ -380,7 +397,8 @@ function loadConnectivityImpact() {
       };
 
       // ── Draw corridor polylines ──
-      (data.corridors || []).forEach(corridor => {
+      connectivityCorridors = data.corridors || [];
+      connectivityCorridors.forEach(corridor => {
         const color = statusColors[corridor.status] || '#64748b';
         const serviceChips = (corridor.affected_service_types || [])
           .map(t => (SERVICE_POINT_ICONS[t] || '📍') + ' ' + t.replace('_', ' '))
@@ -458,17 +476,18 @@ function loadConnectivityImpact() {
 
       html += '<div class="conn-summary">' + total + ' corridors · ' + totalSP + ' service points &nbsp;' + summaryChips + '</div>';
       html += '<span class="connectivity-notice">⚠ SIH demonstration seed · not an official road-authority feed. Verify all road status with authorities before action.</span>';
+      html += '<div id="selectedCorridorDetails" class="selected-corridor-details" hidden></div>';
 
       if (corridors.length === 0) {
         html += '<div class="corridor-card">No corridors loaded.</div>';
       } else {
-        corridors.forEach(c => {
+        corridors.forEach((c, index) => {
           const color = statusColors[c.status] || '#64748b';
           const statusLabel = c.status.replaceAll('_', ' ');
           const svcIcons = (c.affected_service_types || []).map(t => SERVICE_POINT_ICONS[t] || '📍').join(' ');
           const statusClass = 'status-' + c.status;
 
-          html += '<div class="corridor-card ' + statusClass + '" onclick="zoomToCorridor(' + JSON.stringify(c.points) + ')">' +
+          html += '<div class="corridor-card ' + statusClass + '" onclick="selectCorridorByIndex(' + index + ')">' +
             '<div class="corridor-card-header">' +
             '<span class="corridor-name">' + escapeHtml(c.name) + '</span>' +
             (c.highway_ref ? '<span class="hw-ref">' + escapeHtml(c.highway_ref) + '</span>' : '') +
@@ -520,7 +539,49 @@ function loadConnectivityImpact() {
 function zoomToCorridor(points) {
   if (!points || points.length === 0) return;
   const latLngs = points.map(p => L.latLng(p[0], p[1]));
-  map.fitBounds(L.latLngBounds(latLngs), { padding: [40, 40] });
+  map.fitBounds(L.latLngBounds(latLngs), { padding: [80, 80], maxZoom: 12 });
+}
+
+function selectCorridorByIndex(index) {
+  const corridor = connectivityCorridors[index];
+  if (!corridor || !corridor.points?.length) return;
+
+  selectedCorridorLayers.forEach(layer => map.removeLayer(layer));
+  selectedCorridorLayers = [];
+
+  const route = corridor.points.map(point => L.latLng(point[0], point[1]));
+  const halo = L.polyline(route, { color: '#ffffff', weight: 14, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+  const highlight = L.polyline(route, { color: '#facc15', weight: 8, opacity: 1, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+  const start = L.circleMarker(route[0], { radius: 9, color: '#ffffff', weight: 3, fillColor: '#16a34a', fillOpacity: 1 }).addTo(map);
+  const end = L.circleMarker(route[route.length - 1], { radius: 9, color: '#ffffff', weight: 3, fillColor: '#dc2626', fillOpacity: 1 }).addTo(map);
+  selectedCorridorLayers = [halo, highlight, start, end];
+
+  const bounds = L.latLngBounds(route);
+  map.fitBounds(bounds, { padding: [100, 100], maxZoom: 12, animate: true });
+  highlight.bindPopup(buildCorridorDetails(corridor), { maxWidth: 360 }).openPopup();
+
+  document.querySelectorAll('.corridor-card.selected').forEach(card => card.classList.remove('selected'));
+  const cards = document.querySelectorAll('.corridor-card');
+  if (cards[index]) cards[index].classList.add('selected');
+  const detail = document.getElementById('selectedCorridorDetails');
+  if (detail) {
+    detail.innerHTML = '<b>Selected corridor</b>' + buildCorridorDetails(corridor);
+    detail.hidden = false;
+    detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function buildCorridorDetails(corridor) {
+  const services = (corridor.affected_service_types || []).map(type => SERVICE_POINT_ICONS[type] || '📍').join(' ');
+  return '<strong>' + escapeHtml(corridor.name) + '</strong>' +
+    (corridor.highway_ref ? ' <b>' + escapeHtml(corridor.highway_ref) + '</b>' : '') +
+    '<br>Status: <b>' + escapeHtml((corridor.status || '').replaceAll('_', ' ')) + '</b>' +
+    '<br>Priority: ' + corridor.priority_score + ' · Reports: ' + corridor.nearby_report_count +
+    ' · People at risk: ' + corridor.reported_people_at_risk +
+    '<br>Services: ' + (services || 'None recorded') +
+    (corridor.states_connected ? '<br>Area: ' + escapeHtml(corridor.states_connected.join(' ↔ ')) : '') +
+    (corridor.village_impact_note ? '<br><small>' + escapeHtml(corridor.village_impact_note) + '</small>' : '') +
+    (corridor.action ? '<br><small style="color:#fbbf24">Action: ' + escapeHtml(corridor.action) + '</small>' : '');
 }
 
 
@@ -602,13 +663,16 @@ function closeSafetyGuide() {
 
 function openLocationDetails(alert) {
   selectedLocationAlert = alert;
-  const value = item => item === null || item === undefined ? '—' : escapeHtml(item);
+  const value = item => item === null || item === undefined || item === '' ? 'Unavailable' : escapeHtml(item);
+  const rainValue = item => item === null || item === undefined || item === '' ? 'Unavailable' : escapeHtml(item) + ' mm';
+  const rainfall24h = alert.rainfall_24h_mm ?? alert.rainfall_24h;
+  const forecastRainfall = alert.forecast_rainfall_mm ?? alert.forecast_rainfall;
   const fresh = alert.weather_fetched_at_utc ? new Date(alert.weather_fetched_at_utc).toLocaleString() : 'Climate simulation / no live timestamp';
   
   document.getElementById('locationDetails').innerHTML =
     '<div style="display:flex; justify-content:space-between; align-items:center;"><h4>' + escapeHtml(alert.name) + '</h4>' +
     '<span class="badge ' + escapeHtml(alert.level) + '" style="font-size:14px; padding:6px 12px;">' + value(alert.risk) + '% RISK</span></div>' +
-    '<div class="score-explainer" style="margin-top:10px;"><b>Final Landslide Probability: ' + value(alert.risk) + '%</b><br>Terrain Susceptibility: ' + value(alert.susceptibility_score) + '% | Trigger Probability: ' + value(alert.trigger_prob) + '%</div>' +
+    '<div class="score-explainer" style="margin-top:10px;"><b>Experimental Screening Score: ' + value(alert.risk) + '%</b><br>Terrain Susceptibility: ' + value(alert.susceptibility_score) + '% | Trigger Probability: ' + value(alert.trigger_prob) + '%</div>' +
     
     '<div class="location-grid" style="margin-top:15px; grid-template-columns: 1fr 1fr 1fr;">' +
     '<div><small>Next 24 Hours</small><b style="font-size:16px;">' + value(alert.pred_24h) + '%</b></div>' +
@@ -629,7 +693,7 @@ function openLocationDetails(alert) {
     '<div><small>Soil Moisture (Sim)</small>' + value(alert.soil_moisture) + '% (' + value(alert.soil_saturation) + ')</div>' +
     '<div><small>24h Change</small>' + value(alert.soil_24h_change) + '%</div>' +
     '<div><small>Satellite Anomaly</small>' + (alert.sat_detected ? ('Detected (' + value(alert.sat_confidence) + '%)') : 'None') + '</div>' +
-    '<div><small>Rain, 24 hours</small>' + value(alert.rainfall_24h_mm) + ' mm</div>' +
+    '<div><small>Rain, 24 hours</small>' + value(rainfall24h) + (rainfall24h == null ? '' : ' mm') + '</div>' +
     '<div><small>7-day cumulative</small>' + value(alert.rainfall_window_total) + ' mm</div>' +
     '<div><small>Elevation / Slope</small>' + value(alert.elevation_m) + ' m / ' + value(alert.slope_pct) + '%</div>' +
     '</div>' +
@@ -651,7 +715,7 @@ function openLocationDetails(alert) {
     const ctx = document.getElementById('historyChart');
     if (window.historyChartInstance) window.historyChartInstance.destroy();
     if (ctx) {
-      const mockData = [alert.rainfall_mm * 0.5, alert.rainfall_mm * 1.2, alert.rainfall_mm * 0.8, alert.rainfall_mm * 0.3, alert.rainfall_mm * 1.5, alert.rainfall_24h_mm || alert.rainfall_mm, alert.forecast_rainfall_mm || alert.rainfall_mm * 1.1];
+      const mockData = [alert.rainfall_mm * 0.5, alert.rainfall_mm * 1.2, alert.rainfall_mm * 0.8, alert.rainfall_mm * 0.3, alert.rainfall_mm * 1.5, rainfall24h ?? alert.rainfall_mm, forecastRainfall ?? alert.rainfall_mm * 1.1];
       window.historyChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -676,7 +740,7 @@ function openLocationDetails(alert) {
       const records = result.records || [];
       audit.innerHTML = '<b>Stored observation trail</b>' + (records.length
         ? records.map(record => '<div class="audit-row">' + escapeHtml(new Date(record.fetched_at_utc).toLocaleString()) +
-          ' · ' + escapeHtml(record.source) + ' · Obs 24h: ' + value(record.rainfall_24h_mm) + ' mm · Forecast: ' + value(record.forecast_rainfall_mm) + ' mm</div>').join('')
+          ' · ' + escapeHtml(record.source) + ' · Obs 24h: ' + rainValue(record.rainfall_24h_mm) + ' · Forecast: ' + rainValue(record.forecast_rainfall_mm) + '</div>').join('')
         : '<div class="audit-row">No stored observations yet.</div>') +
         '<small>Observed rainfall and forecast are retained as separate fields.</small>';
     })
@@ -722,12 +786,21 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ===== LIVE ROUTING (OSRM) =====
+function clearSafeRoute() {
+  if (!currentRouteControl) return;
+  map.removeControl(currentRouteControl);
+  currentRouteControl = null;
+}
+
+map.on('click', clearSafeRoute);
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') clearSafeRoute();
+});
+
 function findSafeRoute(points) {
   if (!points || points.length < 2) return;
   
-  if (currentRouteControl) {
-    map.removeControl(currentRouteControl);
-  }
+  clearSafeRoute();
   
   showToast("Calculating safe alternative route...");
   
@@ -768,11 +841,11 @@ let currentLang = 'en';
 const translations = {
   en: {
     dataMethod: '<i class="fa-solid fa-database"></i> Data & Method', emergencyHelp: '<i class="fa-solid fa-phone-volume"></i> Emergency Help', trackReport: '<i class="fa-solid fa-magnifying-glass"></i> Track Report', reportIncident: '<i class="fa-solid fa-triangle-exclamation"></i> Report Incident', resetMapView: '<i class="fa-solid fa-rotate-left"></i> Reset Map View', liveMode: '<i class="fa-solid fa-tower-broadcast"></i> LIVE', simMode: '<i class="fa-solid fa-cloud-showers-heavy"></i> MONSOON SIM', getSmsAlerts: '<i class="fa-solid fa-envelope-open-text"></i> Get SMS/WhatsApp Alerts', showCitizenReports: 'Show unverified citizen incident reports', showRoadConnectivity: 'Show connectivity demonstration corridors', showRainfallHeatmap: 'Show Rainfall Heatmap Layer', showEvacRoutes: 'Show Safe Evacuation Routes', locationIntell: 'Location Intelligence', whatToDo: 'What to do now', emergencyHelpBtn: 'Emergency Help', subscribeTitle: 'Get Priority Alerts', subscribeDesc: 'Receive instant WhatsApp & SMS alerts when risk level changes for your district.', subscribeBtn: 'Subscribe Now', subscribeNote: 'Note: This is a demonstration feature for SIH 2026. No real SMS will be sent.',
-    finalProb: 'Landslide Probability', modelConf: 'Model Confidence', trigger: 'Trigger', emergencyForCity: 'Emergency help for this city', terrainSusc: 'Terrain Susceptibility', rainfallTrig: 'Rainfall Trigger Probability', predWindows: 'Prediction Windows', next24h: 'NEXT 24 HOURS', next48h: 'NEXT 48 HOURS', next72h: 'NEXT 72 HOURS', primaryTrigger: 'Primary Trigger', mediaLabel: 'Photo/Video (optional, JPG/PNG/MP4/WebM, max 15 MB)'
+    finalProb: 'Screening Score', modelConf: 'Experimental Model', trigger: 'Trigger', emergencyForCity: 'Emergency help for this city', terrainSusc: 'Terrain Susceptibility', rainfallTrig: 'Rainfall Trigger', predWindows: 'Projection Windows', next24h: 'NEXT 24 HOURS', next48h: 'NEXT 48 HOURS', next72h: 'NEXT 72 HOURS', primaryTrigger: 'Primary Trigger', mediaLabel: 'Photo/Video (optional, JPG/PNG/MP4/WebM, max 15 MB)'
   },
   hi: {
     dataMethod: '<i class="fa-solid fa-database"></i> डेटा और तरीका', emergencyHelp: '<i class="fa-solid fa-phone-volume"></i> आपातकालीन मदद', trackReport: '<i class="fa-solid fa-magnifying-glass"></i> रिपोर्ट ट्रैक करें', reportIncident: '<i class="fa-solid fa-triangle-exclamation"></i> घटना की रिपोर्ट करें', resetMapView: '<i class="fa-solid fa-rotate-left"></i> मैप रीसेट करें', liveMode: '<i class="fa-solid fa-tower-broadcast"></i> लाइव (LIVE)', simMode: '<i class="fa-solid fa-cloud-showers-heavy"></i> मानसून सिमुलेशन', getSmsAlerts: '<i class="fa-solid fa-envelope-open-text"></i> SMS/WhatsApp अलर्ट पाएं', showCitizenReports: 'असत्यापित नागरिक घटना रिपोर्ट दिखाएं', showRoadConnectivity: 'सड़क कनेक्टिविटी कॉरिडोर दिखाएं', showRainfallHeatmap: 'बारिश का हीटमैप दिखाएं', showEvacRoutes: 'सुरक्षित निकासी मार्ग दिखाएं', locationIntell: 'स्थान की जानकारी', whatToDo: 'अब क्या करें?', emergencyHelpBtn: 'आपातकालीन मदद', subscribeTitle: 'अलर्ट प्राप्त करें', subscribeDesc: 'जब आपके जिले का जोखिम स्तर बदलेगा तो तुरंत WhatsApp और SMS अलर्ट प्राप्त करें।', subscribeBtn: 'अभी सब्सक्राइब करें', subscribeNote: 'नोट: यह SIH 2026 के लिए एक डेमो है। कोई असली SMS नहीं भेजा जाएगा।',
-    finalProb: 'भूस्खलन की संभावना', modelConf: 'मॉडल का विश्वास', trigger: 'कारण', emergencyForCity: 'इस शहर के लिए आपातकालीन मदद', terrainSusc: 'इलाके की संवेदनशीलता', rainfallTrig: 'बारिश ट्रिगर संभावना', predWindows: 'भविष्यवाणी समय', next24h: 'अगले 24 घंटे', next48h: 'अगले 48 घंटे', next72h: 'अगले 72 घंटे', primaryTrigger: 'मुख्य कारण', mediaLabel: 'फोटो/वीडियो (वैकल्पिक, JPG/PNG/MP4/WebM, अधिकतम 15 MB)'
+    finalProb: 'स्क्रीनिंग स्कोर', modelConf: 'प्रायोगिक मॉडल', trigger: 'कारण', emergencyForCity: 'इस शहर के लिए आपातकालीन मदद', terrainSusc: 'इलाके की संवेदनशीलता', rainfallTrig: 'बारिश ट्रिगर', predWindows: 'अनुमानित समय', next24h: 'अगले 24 घंटे', next48h: 'अगले 48 घंटे', next72h: 'अगले 72 घंटे', primaryTrigger: 'मुख्य कारण', mediaLabel: 'फोटो/वीडियो (वैकल्पिक, JPG/PNG/MP4/WebM, अधिकतम 15 MB)'
   }
 };
 

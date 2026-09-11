@@ -1,7 +1,7 @@
 {
-  "name": "NER Landslide AI",
-  "short_name": "Landslide AI",
-  "description": "AI-powered landslide early warning and incident support for Northeast India.",
+  "name": "Suraksha Kawach",
+  "short_name": "Suraksha Kawach",
+  "description": "Experimental landslide risk screening and incident support for Northeast India.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",

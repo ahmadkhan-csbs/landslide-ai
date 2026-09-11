@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NER Landslide AI — Early Warning & Incident Support</title>
+<title>Suraksha Kawach — AI Early Warning &amp; Incident Support</title>
 
 <!-- Google Fonts + Icons -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -27,7 +27,10 @@
 <body>
 <header>
   <div class="left">
-    <h1><i class="fa-solid fa-mountain-sun"></i> NER Landslide AI — Early Warning & Incident Support</h1>
+    <a class="brand-mark" href="index.html" aria-label="Suraksha Kawach home">
+      <i class="fa-solid fa-shield-heart" aria-hidden="true"></i>
+    </a>
+    <h1>Suraksha Kawach <span>— AI Early Warning &amp; Incident Support</span></h1>
   </div>
   <div class="header-right">
     <button class="method-btn" onclick="openMethodPanel()" data-i18n="dataMethod"><i class="fa-solid fa-database"></i> Data & Method</button>
@@ -42,7 +45,7 @@
     <span class="live" id="liveStatus"><i class="fa-solid fa-circle" style="font-size:8px;"></i> LOADING</span>
   </div>
 </header>
-<div class="info-banner" role="note"><i class="fa-solid fa-satellite-dish"></i> AI-powered landslide early warning for Northeast India &nbsp;·&nbsp; SIH 2026 Prototype &nbsp;·&nbsp; <span style="opacity:0.8;">For emergencies: <b>Call 112</b> &nbsp;·&nbsp; Verify critical decisions with IMD & state authorities</span></div>
+<div class="info-banner" role="note"><i class="fa-solid fa-satellite-dish"></i> Experimental landslide risk screening for Northeast India &nbsp;·&nbsp; SIH 2026 Prototype &nbsp;·&nbsp; <span style="opacity:0.8;">Not an official warning or probability. For emergencies: <b>Call 112</b> &nbsp;·&nbsp; Verify critical decisions with IMD &amp; state authorities</span></div>
 
 <div class="container">
   <div id="map"></div>
@@ -114,12 +117,12 @@
     <div class="map-key"><span class="key screening"></span> Screening location <span class="key incident"></span> Citizen report <span class="key corridor"></span> Corridor &nbsp;|&nbsp; <span class="key hospital"></span> Hospital <span class="key police"></span> Police <span class="key rescue"></span> Rescue <span class="key shelter"></span> Shelter</div>
     <div id="alerts"></div>
     <div class="model-info">
-      <b><i class="fa-solid fa-robot"></i> Model score:</b> Real-time AI terrain susceptibility index<br>
+      <b><i class="fa-solid fa-robot"></i> Model score:</b> Experimental Random Forest screening score<br>
       <b><i class="fa-solid fa-chart-simple"></i> Risk inputs:</b> location, month, rainfall, elevation and slope<br>
       <b><i class="fa-solid fa-mountain"></i> Terrain:</b> nearest available SRTM terrain-grid value<br>
       <b><i class="fa-solid fa-cloud-rain"></i> Rainfall:</b> live 7-day average or seasonal simulation<br>
       <b><i class="fa-solid fa-tower-broadcast"></i> Live Data:</b> IMD when configured; Open-Meteo labelled fallback<br>
-      <b><i class="fa-solid fa-circle-info"></i> Current screen:</b> Dynamic rainfall-and-terrain heuristic rule
+      <b><i class="fa-solid fa-circle-info"></i> Current screen:</b> Not an official warning or calibrated probability
       <br><a class="admin-link" href="admin.html">Local incident verification (authorized users)</a>
     </div>
   </div>
@@ -196,22 +199,22 @@
     <button class="close-modal" onclick="closeMethodPanel()" aria-label="Close">×</button>
     <h3 style="border-bottom: 2px solid #38bdf8; padding-bottom: 10px; margin-bottom: 15px;"><i class="fa-solid fa-shield-halved" style="color:#38bdf8;"></i> Data Authenticity & Verification</h3>
     
-    <div id="methodHealth" class="method-health" style="background:#022c22; border-left:4px solid #22c55e; color:#a7f3d0; padding:10px; margin-bottom:15px; font-weight:600;">System is currently receiving Real-Time verified data streams.</div>
+    <div id="methodHealth" class="method-health" style="background:#022c22; border-left:4px solid #22c55e; color:#a7f3d0; padding:10px; margin-bottom:15px; font-weight:600;">Data freshness and provider status will be shown here. This is experimental screening data.</div>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
       <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
         <h4 style="color: #38bdf8; margin-bottom: 5px;"><i class="fa-solid fa-satellite"></i> Terrain & Topography</h4>
-        <p style="font-size: 11px; color: #cbd5e1;"><b>Source:</b> NASA SRTM (Shuttle Radar Topography Mission)<br><b>Resolution:</b> 30-meter global Digital Elevation Model.<br><b>Confidence:</b> 99.8% (Space-grade accuracy for Slope & Elevation)</p>
+        <p style="font-size: 11px; color: #cbd5e1;"><b>Source:</b> Project terrain grid derived from SRTM data<br><b>Use:</b> Nearest available elevation and slope values<br><b>Note:</b> Grid coverage and local terrain quality should be independently validated.</p>
       </div>
       <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
         <h4 style="color: #22c55e; margin-bottom: 5px;"><i class="fa-solid fa-cloud-bolt"></i> Real-Time Weather</h4>
-        <p style="font-size: 11px; color: #cbd5e1;"><b>Source:</b> Open-Meteo & IMD (Indian Meteorological Dept) API<br><b>Refresh Rate:</b> Every 1 Hour<br><b>Confidence:</b> 95%+ (Live telemetry & 7-day trailing data)</p>
+        <p style="font-size: 11px; color: #cbd5e1;"><b>Source:</b> IMD when configured, otherwise labelled Open-Meteo fallback<br><b>Use:</b> Observed 1-hour, 24-hour and 7-day rainfall windows<br><b>Note:</b> Provider status and freshness are shown with results.</p>
       </div>
     </div>
     
     <div class="method-section" style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
       <h4 style="color: #ef4444; margin-bottom: 5px;"><i class="fa-solid fa-brain"></i> AI / ML Risk Algorithm</h4>
-      <p style="font-size: 11px; color: #cbd5e1;"><b>Mechanism:</b> Dynamic Heuristic Scoring. The AI cross-references SRTM slope steepness with live 7-day cumulative rainfall data to generate a real-time 'Terrain Susceptibility Score'.<br><i style="color:#fbbf24;">Note: This system provides high-confidence, real-time proactive risk screening optimized for immediate Disaster Management Response.</i></p>
+      <p style="font-size: 11px; color: #cbd5e1;"><b>Mechanism:</b> A scikit-learn Random Forest classifier uses latitude, longitude, month, rainfall, elevation and slope. Supporting indicators explain the screening result.<br><i style="color:#fbbf24;">Note: This is an experimental screening score, not a calibrated probability, official warning or evacuation order.</i></p>
     </div>
     
     <div class="method-links" style="margin-top: 15px; display:flex; gap:10px;"><a href="https://api.imd.gov.in/public/api_reference.html" target="_blank" rel="noopener" style="background:#1e293b; padding:5px 10px; border-radius:4px; text-decoration:none;">IMD API ↗</a><a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener" style="background:#1e293b; padding:5px 10px; border-radius:4px; text-decoration:none;">NASA SRTM ↗</a><a href="https://open-meteo.com/" target="_blank" rel="noopener" style="background:#1e293b; padding:5px 10px; border-radius:4px; text-decoration:none;">Open-Meteo ↗</a></div>
@@ -255,7 +258,7 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=2"></script>
+<script src="script.js?v=4"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
