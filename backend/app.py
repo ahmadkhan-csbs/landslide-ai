@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Header, Request, Response, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
@@ -579,41 +579,62 @@ app.mount("/assets", StaticFiles(directory=DASHBOARD_DIR), name="dashboard_asset
 CONNECTIVITY_SEED_FILE = os.path.join(BASE_DIR, "..", "data", "ner_connectivity_demo.json")
 
 
+def safe_file_response(file_path: str, media_type: str | None = None):
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type=media_type)
+    return HTMLResponse(
+        content=(
+            "<html><head><title>Landslide AI</title>"
+            "<style>body{font-family:system-ui;background:#050b16;color:#e5e7eb;padding:2rem}</style>"
+            "</head><body><h1>Landslide AI</h1>"
+            "<p>The frontend build is not present in this deployment yet. "
+            "This backend is running, but the UI files are missing.</p>"
+            "<p>Deploy the Next.js dashboard or serve a built frontend bundle to this path.</p></body></html>"
+        ),
+        status_code=503,
+        media_type="text/html",
+    )
+
+
 @app.get("/")
-def serve_frontend():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
+def health_check():
+    return {
+        "status": "online",
+        "service": "Landslide Early Warning API",
+        "version": "2.0"
+    }
 
 @app.get("/index.html")
 def serve_frontend_alias():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
+    return safe_file_response(os.path.join(DASHBOARD_DIR, "index.html"))
 
 @app.get("/manifest.json")
 def serve_manifest():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "manifest.json"), media_type="application/manifest+json")
+    return safe_file_response(os.path.join(DASHBOARD_DIR, "manifest.json"), media_type="application/manifest+json")
 
 @app.get("/sw.js")
 def serve_service_worker():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "sw.js"), media_type="application/javascript")
+    return safe_file_response(os.path.join(DASHBOARD_DIR, "sw.js"), media_type="application/javascript")
 
 @app.get("/script.js")
 def serve_script():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "script.js"), media_type="application/javascript")
+    return safe_file_response(os.path.join(DASHBOARD_DIR, "script.js"), media_type="application/javascript")
 
 @app.get("/style.css")
 def serve_style():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "style.css"), media_type="text/css")
+    return safe_file_response(os.path.join(DASHBOARD_DIR, "style.css"), media_type="text/css")
 
 @app.get("/admin.html")
 def serve_admin_page():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "admin.html"))
+    return safe_file_response(os.path.join(DASHBOARD_DIR, "admin.html"))
 
 @app.get("/admin.css")
 def serve_admin_css():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "admin.css"), media_type="text/css")
+    return safe_file_response(os.path.join(DASHBOARD_DIR, "admin.css"), media_type="text/css")
 
 @app.get("/admin.js")
 def serve_admin_js():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "admin.js"), media_type="application/javascript")
+    return safe_file_response(os.path.join(DASHBOARD_DIR, "admin.js"), media_type="application/javascript")
 
 class CitizenReport(BaseModel):
     lat: float = Field(ge=21.0, le=29.5, description="Latitude within demonstrated NER coverage")
