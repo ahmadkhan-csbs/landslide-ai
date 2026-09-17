@@ -6,5 +6,13 @@
     "from": "UNVERIFIED",
     "to": "VERIFIED",
     "note": "haa sach mein hua h"
+  },
+  {
+    "at_utc": "2026-09-12T06:45:10Z",
+    "action": "report_status_changed",
+    "reference_id": "NER-20260912-00006",
+    "from": "UNVERIFIED",
+    "to": "VERIFIED",
+    "note": "haa yrr sach mien hua h yee"
   }
 ]

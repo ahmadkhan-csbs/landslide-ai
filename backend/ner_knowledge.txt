@@ -1,0 +1,73 @@
+North-East India Region (NER) Geographic and Demographic Database
+
+1. Arunachal Pradesh
+Capital: Itanagar
+Districts: 25, Villages: 5,589, Towns: 27
+Area: 83,743 sq km, Population: 13,83,727 (Density: 17/sq km)
+Major Rivers: Siang, Subansiri, Lohit, Dibang, Kameng, Tawang Chu, Noa-Dihing, Tirap
+Major Mountains/Ranges: Eastern Himalayas, Greater Himalayas, Lesser/Lower Himalayas, Siwalik foothills, Mishmi Hills, Patkai Hills
+Notes: Extremely mountainous, covers roughly 70% of the state.
+
+2. Assam
+Capital: Dispur
+Districts: 33, Villages: 26,395, Towns: 214
+Area: 78,438 sq km, Population: 3,12,05,576 (Density: 398/sq km)
+Major Rivers: Brahmaputra, Barak, Subansiri, Manas, Dhansiri, Kopili, Jia-Bharali, Beki, Sankosh, Dikhow, Dihing, Burhi Dihing, Disang
+Major Hills: Karbi Anglong Hills, Dima Hasao Hills, North Cachar Hills, Patkai foothills
+Notes: Brahmaputra and Barak valleys form the major plains systems.
+
+3. Manipur
+Capital: Imphal
+Districts: 16, Villages: 2,582, Towns: 51
+Area: 22,327 sq km, Population: 28,55,794 (Density: 115/sq km)
+Major Rivers: Imphal River, Iril, Thoubal, Nambul, Sekmai, Barak, Khuga
+Major Hills: Manipur Hills, Naga Hills, Kuki Hills, Barail Range
+Special Features: Loktak Lake (famous freshwater lake).
+
+4. Meghalaya
+Capital: Shillong
+Districts: 11, Villages: 6,839, Towns: 22
+Area: 22,429 sq km, Population: 29,66,889 (Density: 132/sq km)
+Major Rivers: Umiam, Myntdu, Umngot, Simsang, Kynshi, Wah Umkhrah
+Major Hills/Plateaus: Khasi Hills, Jaintia Hills, Garo Hills, Meghalaya Plateau
+Notes: Major hill-and-plateau region.
+
+5. Mizoram
+Capital: Aizawl
+Districts: 11, Villages: 830, Towns: 23
+Area: 21,081 sq km, Population: 10,97,206 (Density: 52/sq km)
+Major Rivers: Tlawng, Tuirial, Tuivawl, Kolodyne/Kaladan, Chhimtuipui
+Major Hills: Mizo Hills, Lushai Hills, Rakhine/Arakan-associated ranges
+Notes: Predominantly hilly, long north-south ranges.
+
+6. Nagaland
+Capital: Kohima
+Districts: 11, Villages: 1,428, Towns: 26
+Area: 16,579 sq km, Population: 19,78,502 (Density: 119/sq km)
+Major Rivers: Doyang, Dhansiri, Dikhu, Tizu, Zungki
+Major Hills/Ranges: Naga Hills, Patkai Range, Saramati Range
+Notes: Mount Saramati is the highest peak.
+
+7. Sikkim
+Capital: Gangtok
+Districts: 6, Villages: 451, Towns: 9
+Area: 7,096 sq km, Population: 6,10,577 (Density: 86/sq km)
+Major Rivers: Teesta, Rangeet, Lachung Chu, Lachen Chu, Rangpo Chu
+Major Mountains: Kanchenjunga, Eastern Himalayas, Singalila Range
+Notes: Almost entirely Himalayan terrain.
+
+8. Tripura
+Capital: Agartala
+Districts: 8, Villages: 875, Towns: 42
+Area: 10,486 sq km, Population: 36,73,917 (Density: 350/sq km)
+Major Rivers: Gomati, Manu, Khowai, Haora, Feni, Muhuri, Dhalai, Juri
+Major Hills: Jampui Hills, Longtharai Hills, Atharamura Hills, Baramura Hills, Deotamura Hills
+
+TOTAL NER STATS:
+States: 8
+Districts: 131
+Villages: 44,989
+Towns/Cities: 414
+Area: 262,179 sq km (7.97% of India)
+Population: 4,57,72,188 (3.78% of India)
+Density: ~173 per sq km average.

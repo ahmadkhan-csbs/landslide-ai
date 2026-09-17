@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Leaflet Dark Theme Overrides */
+.leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.9) !important; /* slate-900 */
+  backdrop-filter: blur(12px) !important;
+  color: white !important;
+  border: 1px solid rgba(51, 65, 85, 0.8) !important; /* slate-700 */
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.9) !important; /* slate-900 */
+  border: 1px solid rgba(51, 65, 85, 0.8) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+.leaflet-container {
+  background: #0f172a !important; /* slate-900 fallback */
+  font-family: inherit !important;
+}
