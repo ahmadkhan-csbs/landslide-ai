@@ -349,6 +349,13 @@ def data_health():
 
     current = [item for item in unique_obs if is_fresh(item, 60 * 60)]
     stale   = [item for item in unique_obs if item not in current]
+    # Historical refreshes can contain aliases for the same monitored city.
+    # Never report more fresh locations than the configured NER coverage.
+    monitored_locations = len(CITIES)
+    fresh_count = min(len(current), monitored_locations)
+    observed_count = min(len(unique_obs), monitored_locations)
+    missing_count = max(0, monitored_locations - observed_count)
+    stale_count = max(0, monitored_locations - fresh_count - missing_count)
 
     provider_counts: dict[str, int] = {}
     fallback_count = 0
@@ -356,12 +363,13 @@ def data_health():
         provider_counts[item["source"]] = provider_counts.get(item["source"], 0) + 1
         if "fallback" in item.get("status", "").lower():
             fallback_count += 1
+    fallback_count = min(fallback_count, monitored_locations)
 
     newest = max((item["fetched_at_utc"] for item in unique_obs), default=None)
     return {
-        "monitored_locations": len(CITIES), "locations_with_observations": len(unique_obs),
-        "fresh_within_minutes": 60, "fresh_locations": len(current), "stale_locations": len(stale),
-        "missing_locations": max(0, len(CITIES) - len(unique_obs)), "provider_counts": provider_counts,
+        "monitored_locations": monitored_locations, "locations_with_observations": observed_count,
+        "fresh_within_minutes": 60, "fresh_locations": fresh_count, "stale_locations": stale_count,
+        "missing_locations": missing_count, "provider_counts": provider_counts,
         "fallback_locations": fallback_count, "newest_fetch_at_utc": newest,
         "overall_status": "LIVE_READY" if len(current) == len(CITIES) else "PARTIAL_OR_STALE",
         "note": "Experimental dashboard data quality only. This is not an official warning-service availability metric.",
@@ -573,6 +581,7 @@ REPORTS_FILE = os.path.join(BASE_DIR, "..", "data", "citizen_reports.json")
 AUDIT_FILE = os.path.join(BASE_DIR, "..", "data", "audit_log.json")
 UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
 DASHBOARD_DIR = os.path.join(BASE_DIR, "..", "dashboard")
+ADMIN_DASHBOARD_DIR = os.path.join(BASE_DIR, "..", "dashboard_old")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 app.mount("/assets", StaticFiles(directory=DASHBOARD_DIR), name="dashboard_assets")
@@ -626,15 +635,15 @@ def serve_style():
 
 @app.get("/admin.html")
 def serve_admin_page():
-    return safe_file_response(os.path.join(DASHBOARD_DIR, "admin.html"))
+    return safe_file_response(os.path.join(ADMIN_DASHBOARD_DIR, "admin.html"))
 
 @app.get("/admin.css")
 def serve_admin_css():
-    return safe_file_response(os.path.join(DASHBOARD_DIR, "admin.css"), media_type="text/css")
+    return safe_file_response(os.path.join(ADMIN_DASHBOARD_DIR, "admin.css"), media_type="text/css")
 
 @app.get("/admin.js")
 def serve_admin_js():
-    return safe_file_response(os.path.join(DASHBOARD_DIR, "admin.js"), media_type="application/javascript")
+    return safe_file_response(os.path.join(ADMIN_DASHBOARD_DIR, "admin.js"), media_type="application/javascript")
 
 class CitizenReport(BaseModel):
     lat: float = Field(ge=21.0, le=29.5, description="Latitude within demonstrated NER coverage")
@@ -965,6 +974,27 @@ def connectivity_impact() -> dict:
 @app.get("/connectivity-impact")
 def get_connectivity_impact():
     return connectivity_impact()
+
+
+@app.get("/emergency-assets")
+def get_emergency_assets():
+    """Return source-labelled emergency reference points for the NER map."""
+    seed = _connectivity_seed()
+    assets = [
+        {**point, "location_accuracy": "reference_point", "status": "CURATED_DEMO_DATA", "contact_available": False}
+        for point in seed["service_points"]
+    ]
+    return {
+        "source": seed["source"],
+        "updated_at_utc": seed["updated_at_utc"],
+        "assets": assets,
+        "planned_categories": [
+            "school", "college", "fire_station", "ambulance", "blood_bank", "helipad",
+            "supply_depot", "dm_dc_office", "bdo_office", "pwd_office", "forest_office",
+            "electricity_water_office",
+        ],
+        "notice": "Reference points are demonstration data. Verify coordinates, contacts, and operational status with the relevant state authority before emergency use.",
+    }
 
 
 @app.get("/reports/{reference_id}")
@@ -1414,17 +1444,103 @@ def chat_with_assistant(chat: ChatMessage):
             kb = f.read()
     except:
         kb = ""
+
+    # --- 0. UI CONTROL INTENTS (Actions/Commands) ---
+    if any(w in msg for w in ["open map", "show map", "go to map", "live map", "view map"]):
+        return {"reply": "Opening the Live Map for you.", "action": {"type": "SET_TAB", "payload": "map"}}
+    if any(w in msg for w in ["show alert", "open alert", "view alert", "live alert"]):
+        return {"reply": "Switching to the Live Alerts dashboard.", "action": {"type": "SET_TAB", "payload": "alerts"}}
+    if any(w in msg for w in ["report incident", "file report", "open report"]):
+        return {"reply": "Opening the Incident Report form.", "action": {"type": "SET_TAB", "payload": "report"}}
+    
+    if "reset map" in msg or "center map" in msg:
+        return {"reply": "Resetting the map view.", "action": [{"type": "RESET_MAP"}, {"type": "SET_TAB", "payload": "map"}]}
         
-    # 1. First, check if the user is asking about live risk/weather for a specific city
+    if "simulation mode" in msg or "monsoon sim" in msg:
+        return {"reply": "Switching to Monsoon Simulation mode.", "action": [{"type": "SET_FILTER", "key": "isLiveMode", "value": False}, {"type": "SET_TAB", "payload": "map"}]}
+    if "live mode" in msg or "live data" in msg:
+        return {"reply": "Switching to Live Data mode.", "action": [{"type": "SET_FILTER", "key": "isLiveMode", "value": True}, {"type": "SET_TAB", "payload": "map"}]}
+        
+    if "show heatmap" in msg or "enable heatmap" in msg:
+        return {"reply": "Enabling the rainfall heatmap layer on the map.", "action": [{"type": "SET_FILTER", "key": "showHeatmap", "value": True}, {"type": "SET_TAB", "payload": "map"}]}
+    if "hide heatmap" in msg or "remove heatmap" in msg:
+        return {"reply": "Hiding the rainfall heatmap layer.", "action": [{"type": "SET_FILTER", "key": "showHeatmap", "value": False}, {"type": "SET_TAB", "payload": "map"}]}
+
+    if "evacuation" in msg or "safe zone" in msg or "rescue" in msg or "escape" in msg:
+        return {"reply": "Drawing auto-evacuation routes from HIGH risk cities to the nearest safe zones.", "action": [{"type": "SET_FILTER", "key": "showEvacRoutes", "value": True}, {"type": "SET_TAB", "payload": "map"}]}
+
+    # State filtering
+    for state_name in ["Assam", "Sikkim", "Meghalaya", "Arunachal Pradesh", "Nagaland", "Manipur", "Mizoram", "Tripura"]:
+        if f"show {state_name.lower()}" in msg or f"filter {state_name.lower()}" in msg:
+            return {"reply": f"Filtering the map to show data for {state_name}.", "action": [{"type": "SET_FILTER", "key": "state", "value": state_name}, {"type": "SET_TAB", "payload": "map"}]}
+    if "show all states" in msg or "reset filter" in msg:
+        return {"reply": "Resetting filters to show all NER states.", "action": [{"type": "SET_FILTER", "key": "state", "value": "ALL"}, {"type": "SET_TAB", "payload": "map"}]}
+
+    # --- 1. LIVE DATA INTENTS ---
+
+    # Intent: Overall Summary / Status
+    if any(word in msg for word in ["summary", "overall", "status", "report", "update", "how is"]):
+        high_risk_cities = []
+        for c in CITIES:
+            r = get_risk(c["lat"], c["lon"])
+            if r["level"] == "HIGH":
+                high_risk_cities.append(c["name"].split(",")[0])
+        
+        conn = connectivity_impact()
+        blocked = conn.get("blocked_corridors", 0)
+        
+        reply = f"**Live NER Status Summary:**\n"
+        reply += f"🚨 **High Risk Cities:** {len(high_risk_cities)} monitored locations are currently at HIGH risk of landslides"
+        if high_risk_cities:
+            reply += f" (including {', '.join(high_risk_cities[:3])}).\n"
+        else:
+            reply += ".\n"
+        reply += f"🚧 **Roads Blocked:** {blocked} major highway corridors are confirmed blocked.\n"
+        if blocked > 0:
+            reply += "Please check the live map for auto-calculated alternate routes (shown in green)."
+        return {"reply": reply.strip()}
+
+    # Intent: High Risk Cities
+    if any(word in msg for word in ["high risk", "danger", "worst", "alert", "unsafe"]):
+        high_risk = []
+        for c in CITIES:
+            r = get_risk(c["lat"], c["lon"])
+            if r["level"] == "HIGH":
+                high_risk.append(f"**{c['name']}** ({r['risk']}% probability)")
+        
+        if high_risk:
+            reply = f"The following cities are currently at **HIGH RISK** of landslides:\n" + "\n".join([f"- {name}" for name in high_risk])
+            reply += "\n\nEvacuation and safety protocols should be initiated in these areas."
+        else:
+            reply = "Currently, no cities in our monitored list are at HIGH risk. However, weather conditions can change rapidly."
+        return {"reply": reply}
+        
+    # Intent: Roads and Connectivity
+    if any(word in msg for word in ["road", "blocked", "highway", "route", "corridor", "traffic"]):
+        conn = connectivity_impact()
+        blocked_list = [c for c in conn.get("corridors", []) if c["status"] == "CONFIRMED_BLOCKED"]
+        if blocked_list:
+            reply = f"There are **{len(blocked_list)}** blocked corridors currently:\n"
+            for c in blocked_list:
+                reply += f"- **{c['name']}**: {c.get('action', '')}\n"
+            reply += "\n🟢 Auto-calculated alternate routes are currently being displayed on the live map for these disruptions."
+        else:
+            reply = "Currently, there are no confirmed blocked roads in the monitored corridors. Please drive safely and check local advisories."
+        return {"reply": reply}
+
+    # Intent: Specific City Check
     for city in CITIES:
         city_name = city["name"].split(',')[0].lower()
         if city_name in msg:
-            if "risk" in msg or "safe" in msg or "danger" in msg or "weather" in msg or "rain" in msg or "status" in msg:
-                r = get_risk(city["lat"], city["lon"])
-                reply = f"Currently in {city['name']}, the landslide screening risk is **{r['level']}** ({r['risk']}% probability). Trigger: {r['main_reason']}. Rainfall over 24h is {r.get('rainfall_24h_mm') or r.get('rainfall', 0)} mm."
-                return {"reply": reply}
+            r = get_risk(city["lat"], city["lon"])
+            reply = f"Currently in **{city['name']}**, the landslide screening risk is **{r['level']}** ({r['risk']}% probability).\n\n"
+            reply += f"- **Trigger Reason:** {r['main_reason']}\n"
+            reply += f"- **Rainfall:** {r.get('rainfall_24h_mm') or r.get('rainfall', 0)} mm\n"
+            reply += f"- **Soil Saturation:** {r['soil_saturation']}\n"
+            reply += f"- **Road Impact:** {r['road_status']}"
+            return {"reply": reply}
 
-    # 2. Extract keywords and search the knowledge base paragraphs
+    # --- 2. KNOWLEDGE BASE SEARCH ---
     paragraphs = [p.strip() for p in kb.split('\n\n') if p.strip()]
     keywords = extract_keywords(msg)
     
@@ -1433,24 +1549,22 @@ def chat_with_assistant(chat: ChatMessage):
     
     for p in paragraphs:
         p_lower = p.lower()
-        score = sum(1 for kw in keywords if kw in p_lower)
+        # Weight exact phrase match higher
+        score = sum(2 for kw in keywords if kw in p_lower)
         if score > best_score:
             best_score = score
             best_paragraph = p
             
     if best_score > 0:
-        reply = f"{best_paragraph}"
-    else:
-        # 3. Smart fallbacks instead of repeating the same generic response
-        fallbacks = [
-            "I don't have that specific information in my database. Could you ask about a specific state like Assam or Meghalaya, or ask about live risk levels in a city?",
-            "I'm an AI assistant specialized in North East India's geography and landslide risks. Try asking me about population, rivers, or safety in specific areas.",
-            "While I don't know the exact answer to that, I can tell you about the 131 districts and major rivers of the 8 NER states if you'd like.",
-            "Could you rephrase that? I'm best at answering questions about terrain, rainfall, demographics, and landslide probabilities in the North East Region."
-        ]
-        reply = choice(fallbacks)
-        
-    return {"reply": reply}
+        return {"reply": f"{best_paragraph}"}
+
+    # --- 3. SMART FALLBACKS ---
+    fallbacks = [
+        "I am actively monitoring the region. I can provide live updates on landslide risks, road blockages, and overall regional safety. Try asking **'What is the overall status?'** or **'Which roads are blocked?'**",
+        "Could you ask about a specific state or city? For example, **'What is the risk in Guwahati?'** or **'Which cities are in high danger?'**",
+        "I am processing live satellite, terrain, and weather data for 53 cities and major highway corridors. Ask me for a **'live summary'** to get the latest intel."
+    ]
+    return {"reply": choice(fallbacks)}
 
 @app.post("/vision/analyze")
 def analyze_image(report: CitizenReport):

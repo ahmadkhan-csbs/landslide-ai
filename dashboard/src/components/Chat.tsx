@@ -8,7 +8,11 @@ interface Message {
   content: string;
 }
 
-export default function Chat() {
+interface ChatProps {
+  onAction?: (action: any) => void;
+}
+
+export default function Chat({ onAction }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -185,6 +189,11 @@ export default function Chat() {
       // Auto-play the response
       if (data.reply) {
         playAudio(data.reply, botId);
+      }
+      
+      // Execute UI commands if backend sends any
+      if (data.action && onAction) {
+        onAction(data.action);
       }
       
     } catch (error) {

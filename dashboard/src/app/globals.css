@@ -35,6 +35,16 @@ body {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
 }
 
+.leaflet-popup-content {
+  color: #e2e8f0 !important;
+}
+
+.leaflet-popup-content .text-slate-800,
+.leaflet-popup-content .text-slate-900,
+.leaflet-popup-content .text-black {
+  color: #e2e8f0 !important;
+}
+
 .leaflet-popup-tip {
   background: rgba(15, 23, 42, 0.9) !important; /* slate-900 */
   border: 1px solid rgba(51, 65, 85, 0.8) !important;

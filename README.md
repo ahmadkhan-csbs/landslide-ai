@@ -64,10 +64,25 @@ source .venv/bin/activate       # macOS/Linux
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Start the unified server from the repository root
+# 4. Start the backend from the repository root
 python -m uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
+
+# 5. In a second terminal, start the Next.js dashboard
+cd dashboard
+npm install
+npm run dev
 ```
-**Open in Browser:** `http://127.0.0.1:8000/`
+**Open in Browser:** `http://localhost:3000/`
+
+The Risk Screening sidebar includes an **Admin Portal** button. It opens the authenticated incident command center at `/admin.html`, where submitted citizen reports, verification status, authority queue state, and private evidence are managed. Admin access requires `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` in the backend environment.
+
+On Windows PowerShell, the backend and dashboard can be started together with:
+
+```powershell
+.\start_dashboard.ps1
+```
+
+Keep both processes running while using the dashboard. The Next.js `/api/*` proxy forwards to the FastAPI backend on port `8000`.
 
 ### 🌐 Instant Live Sharing (Ngrok)
 To temporarily share the running dashboard with judges or a mobile phone, open a second terminal:

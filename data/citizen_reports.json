@@ -146,5 +146,41 @@
     "time": "2026-09-12T15:11:24+05:30",
     "ml_risk": 28.4,
     "ml_level": "LOW"
+  },
+  {
+    "id": 9,
+    "lat": 25.57,
+    "lon": 91.88,
+    "description": "Ahmad chutiya",
+    "severity": "MEDIUM",
+    "reporter": "Anonymous",
+    "reporter_phone": "",
+    "incident_type": "LANDSLIDE",
+    "people_at_risk": 0,
+    "photo_filename": "4f94fff6bb43479c9e2f67babb2a4ea3.jpg",
+    "reference_id": "NER-20260917-00009",
+    "verification_status": "UNVERIFIED",
+    "delivery_status": "RECEIVED_LOCALLY_NOT_DISPATCHED",
+    "time": "2026-09-17T21:44:24+05:30",
+    "ml_risk": 65.1,
+    "ml_level": "MEDIUM"
+  },
+  {
+    "id": 10,
+    "lat": 25.57,
+    "lon": 91.88,
+    "description": "Ahmad Room oyo 💦💦💦💦",
+    "severity": "MEDIUM",
+    "reporter": "Anonymous",
+    "reporter_phone": "",
+    "incident_type": "LANDSLIDE",
+    "people_at_risk": 0,
+    "photo_filename": "ece93f0c19a64a7fa6e38d71e835204e.jpg",
+    "reference_id": "NER-20260917-00010",
+    "verification_status": "UNVERIFIED",
+    "delivery_status": "RECEIVED_LOCALLY_NOT_DISPATCHED",
+    "time": "2026-09-17T21:45:22+05:30",
+    "ml_risk": 65.1,
+    "ml_level": "MEDIUM"
   }
 ]

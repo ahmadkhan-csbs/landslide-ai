@@ -42,12 +42,24 @@ interface Alert {
   data_source: string;
 }
 
+interface DataHealth {
+  monitored_locations: number;
+  fresh_locations: number;
+  stale_locations: number;
+  missing_locations: number;
+  fallback_locations: number;
+  provider_counts: Record<string, number>;
+  newest_fetch_at_utc: string | null;
+  overall_status: string;
+}
+
 export default function Alerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
+  const [dataHealth, setDataHealth] = useState<DataHealth | null>(null);
 
   const sortAlerts = (items: Alert[]) =>
     [...items].sort((a: Alert, b: Alert) => {
@@ -60,7 +72,10 @@ export default function Alerts() {
       setError(null);
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
       const url = apiBase ? `${apiBase}/alerts?use_live=true` : "/api/alerts?use_live=true";
-      const res = await fetch(url);
+      const [res, healthRes] = await Promise.all([
+        fetch(url),
+        fetch(apiBase ? `${apiBase}/data-health` : "/api/data-health"),
+      ]);
       if (res.ok) {
         const data = await res.json();
         const sorted = sortAlerts(data);
@@ -69,6 +84,7 @@ export default function Alerts() {
       } else {
         setError("Backend returned an error. Is the server running?");
       }
+      if (healthRes.ok) setDataHealth(await healthRes.json());
     } catch (err) {
       console.error("Failed to fetch alerts:", err);
       setError("Cannot connect to backend API. Please start the FastAPI server.");
@@ -114,6 +130,26 @@ export default function Alerts() {
           Last synced: {lastUpdated || "..."}
         </div>
       </div>
+
+      {dataHealth && (
+        <section className={`rounded-2xl border p-4 ${dataHealth.overall_status === "LIVE_READY" ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/10"}`} aria-label="Live data health">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Radio className={`h-4 w-4 ${dataHealth.overall_status === "LIVE_READY" ? "text-emerald-400" : "text-amber-400"}`} />
+              <span className="text-sm font-bold text-white">Live data health</span>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${dataHealth.overall_status === "LIVE_READY" ? "bg-emerald-500/20 text-emerald-300" : "bg-amber-500/20 text-amber-200"}`}>{dataHealth.overall_status.replaceAll("_", " ")}</span>
+            </div>
+            <span className="text-xs text-slate-400">Newest observation: {dataHealth.newest_fetch_at_utc ? new Date(dataHealth.newest_fetch_at_utc).toLocaleString() : "not available"}</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+            <div className="rounded-lg bg-slate-950/40 p-2"><strong className="block text-emerald-300">{dataHealth.fresh_locations}/{dataHealth.monitored_locations}</strong><span className="text-slate-400">fresh locations</span></div>
+            <div className="rounded-lg bg-slate-950/40 p-2"><strong className="block text-amber-300">{dataHealth.stale_locations}</strong><span className="text-slate-400">stale</span></div>
+            <div className="rounded-lg bg-slate-950/40 p-2"><strong className="block text-red-300">{dataHealth.missing_locations}</strong><span className="text-slate-400">missing</span></div>
+            <div className="rounded-lg bg-slate-950/40 p-2"><strong className="block text-cyan-300">{dataHealth.fallback_locations}</strong><span className="text-slate-400">fallbacks</span></div>
+            <div className="rounded-lg bg-slate-950/40 p-2"><strong className="block text-slate-200">{Object.keys(dataHealth.provider_counts).join(", ") || "none"}</strong><span className="text-slate-400">providers</span></div>
+          </div>
+        </section>
+      )}
 
       {error && (
         <div className="bg-red-950/50 border border-red-500/50 p-6 rounded-2xl flex items-center gap-4 shadow-lg shadow-red-900/20">
