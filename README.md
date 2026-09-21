@@ -51,48 +51,14 @@ The project consists of a Python FastAPI backend and a Next.js React frontend.
 # Clone the repository
 git clone https://github.com/ahmadkhan-csbs/landslide-ai.git
 cd landslide-ai
-
 # Create and activate a virtual environment
 python -m venv .venv
 # Windows: .\.venv\Scripts\Activate.ps1
 # Mac/Linux: source .venv/bin/activate
-
 # Install dependencies
 pip install -r requirements.txt
-
 # Start the FastAPI backend
 python -m uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
 
-2. Setup Frontend (Next.js)
-Open a second terminal:
-
-bash
-
-
-cd dashboard
-npm install
-npm run dev
-Open in Browser: http://localhost:3000/
-
-(Optional) On Windows PowerShell, you can start both servers together:
-
-powershell
-
-
-.\start_dashboard.ps1
-🔌 API Endpoints (FastAPI)
-Endpoint	Method	Description
-/	GET	Serves the legacy UI / Health Check
-/api/alerts	GET	Screening results for all 53 NER locations; live or simulation mode
-/api/report	POST	Submit an unverified citizen report with optional media
-/docs	GET	Interactive Swagger API documentation
-🎯 Future Scope (Production Architecture)
-Migrate to PostgreSQL with PostGIS for advanced spatial queries.
-Implement AWS S3 for scalable cloud storage of citizen media.
-Hardware integration with Arduino/Raspberry Pi IoT Inclinometers for live ground movement tracking.
-Integrate Redis for massive scale SMS queue handling.
-👨‍💻 Built for Smart India Hackathon (SIH) 2026
-
-Disclaimer: This is an experimental decision-support prototype. Screening scores, forecasts, cached values, citizen reports, and route suggestions may be incomplete, delayed, or inaccurate. They are not official warnings, evacuation orders, verified incident confirmations, or substitutes for guidance from IMD, NDMA, NDRF, state authorities, police, fire, medical services, or local disaster-management teams. For immediate danger, contact the official emergency services in your area.
 
 
