@@ -94,3 +94,5 @@ Integrate Redis for massive scale SMS queue handling.
 👨‍💻 Built for Smart India Hackathon (SIH) 2026
 
 Disclaimer: This is an experimental decision-support prototype. Screening scores, forecasts, cached values, citizen reports, and route suggestions may be incomplete, delayed, or inaccurate. They are not official warnings, evacuation orders, verified incident confirmations, or substitutes for guidance from IMD, NDMA, NDRF, state authorities, police, fire, medical services, or local disaster-management teams. For immediate danger, contact the official emergency services in your area.
+
+
