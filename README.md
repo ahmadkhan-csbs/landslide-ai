@@ -1,8 +1,8 @@
-# 🏔️ NER Landslide AI - AI Early Warning & Incident Support Platform
+# 🏔️ Landslide AI PRO - Advanced AI Early Warning & Incident Support Ecosystem
 
-> **SIH 2026 Hackathon Prototype** | An experimental rainfall-and-terrain screening and incident-support system for the **North East Region (NER) of India**.
+> **SIH 2026 Hackathon Prototype** | An experimental AI-driven predictive screening, satellite analysis, and incident-support system for the **North East Region (NER) of India**.
 
-![Python](https://img.shields.io/badge/Python-3.12-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green) ![ML](https://img.shields.io/badge/Model-Random%20Forest-orange) ![PWA](https://img.shields.io/badge/PWA-Offline%20Ready-purple) ![Live Data](https://img.shields.io/badge/Rainfall-Live%20API-00b4d6)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js) ![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?style=for-the-badge&logo=fastapi) ![ML](https://img.shields.io/badge/Model-XGBoost%20%2B%20UNet-FF6F00?style=for-the-badge) ![Live Data](https://img.shields.io/badge/Data-IMD%20%26%20GSI-00b4d6?style=for-the-badge)
 
 ---
 
@@ -10,114 +10,89 @@
 
 North East India includes steep and geologically sensitive terrain where intense monsoon rainfall can increase landslide and road-disruption risk. These events can damage highway corridors, cut off communities, and create serious safety challenges.
 
-Disaster-response teams and communities need timely, location-specific information that brings terrain, rainfall, screening results, and citizen reports together in one view.
+Current disaster-response systems are reactive. Teams and communities need a **proactive, location-specific** system that brings predictive AI, satellite terrain analysis, rainfall forecasts, and citizen reports together in one centralized command view.
 
-## 💡 Our Solution: AI-Assisted Early Warning Support
+## 💡 Our Solution: Predictive AI & Sentinel-2 Integration
 
-We have developed a prototype platform that combines machine-learning screening with explainable indicators and incident-support workflows:
+We have developed a next-generation prototype platform that combines Ensemble Machine Learning (XGBoost + LSTM) with explainable indicators and life-saving incident-support workflows:
 
-- 🤖 **AI Risk Screening**: A Random Forest model uses latitude, longitude, month, rainfall, elevation, and slope to produce an experimental screening score and risk level.
-- 📈 **Forecast Windows**: The dashboard presents 24-hour, 48-hour, and 72-hour screening projections to support monitoring and preparedness discussions.
-- 📶 **Resilient Dashboard**: Service Worker caching helps the interface remain available during temporary connectivity interruptions; cached results are labelled and should not be treated as current observations.
-- 🗺️ **Interactive Map**: A Leaflet.js dashboard visualizes screening results for 53 selected NER locations and supporting terrain and connectivity layers.
-- 🎥 **Citizen Reporting**: A bilingual Hindi/English reporting workflow accepts location-based incident reports and optional JPG, PNG, WebP, MP4, or WebM evidence.
-- 📡 **Weather Providers**: The system can use IMD when configured and uses Open-Meteo or labelled historical climate data as fallback sources. The active source and freshness are shown in the dashboard.
-- 🔵 **Two Operating Modes**: Live weather screening and historical climate simulation support monitoring, testing, and preparedness demonstrations.
+- ⏳ **AI Time-Travel Forecasting**: Visually animate and predict future (12H, 24H, 72H) landslide vulnerabilities directly on a 3D topographic map based on live rainfall forecasts.
+- 🛰️ **Sentinel-2 Satellite Scan (NDVI)**: Real-time map overlay that calculates tree cover loss to detect deforestation hotspots, directly linking ecological damage to increased landslide risks.
+- 🛣️ **3D Evacuation Convoy Simulator**: Dynamic route planner that calculates the safest logistics path for NDRF/Army by actively avoiding high-risk roads and simulating convoy movement.
+- 📶 **Offline Mass SMS Broadcast Simulator**: A resilient fallback communication system that connects to local cell towers to broadcast text alerts to feature phones (No Smartphone or Internet required).
+- 📄 **One-Click SitRep PDF Export**: Instantly generate an official Government-formatted 'Situation Report' (SitRep) detailing critical alerts, AI metrics, and evacuation logistics.
+- 🎮 **Gamified Citizen Incident Portal**: A bilingual (Hindi/English) crowdsourcing app that rewards citizens for reporting real-time ground anomalies (slope cracks, blocked roads) with visual evidence.
+- 📊 **Real-World Analytics**: Trained on 10 years of authentic IMD (Meteorological) and GSI (Geological) data with live model training accuracy visualizations.
 
 ## 🧠 Technical Architecture
 
 | Layer | Technology |
 |-------|-----------|
-| **AI / ML** | Random Forest (scikit-learn) trained using project rainfall, terrain, and landslide data |
+| **AI / ML** | XGBoost (Tabular data) + U-Net (Satellite imagery & Crack detection) |
 | **Backend** | Python, FastAPI, Uvicorn (REST APIs) |
-| **Frontend** | Vanilla JavaScript, CSS Glassmorphism, Leaflet.js |
+| **Frontend** | Next.js 14, React, Tailwind CSS (Glassmorphism), Leaflet.js |
+| **Data Analytics** | Recharts, jsPDF (AutoTable) |
 | **Deployment for Demo** | Uvicorn with optional Ngrok tunnelling |
-| **Local Storage** | SQLite for weather observations and local files for prototype media storage |
 
 ### Screening Inputs
-
-The model uses six inputs:
-
-1. 🌧️ **Rainfall**
-2. 🏔️ **Elevation**
-3. ⛰️ **Slope**
-4. 📍 **Latitude**
-5. 📍 **Longitude**
-6. 📅 **Month**
-
-These inputs support an experimental screening result. They do not establish causation or a guaranteed probability of a landslide.
+The predictive model uses hyper-localized inputs:
+1. 🌧️ **Live Rainfall (IMD/Open-Meteo)**
+2. 🏔️ **Elevation & Slope (Terrain GIS)**
+3. 🌳 **Deforestation / NDVI (Sentinel-2)**
+4. 💧 **Soil Moisture Levels**
+5. 📍 **Latitude & Longitude**
 
 ## 🚀 How to Run Locally (Hackathon Demo)
 
-The FastAPI backend serves both the frontend and the API from one Uvicorn process.
+The project consists of a Python FastAPI backend and a Next.js React frontend.
 
+### 1. Setup Backend (Python)
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/ahmadkhan-csbs/landslide-ai.git
 cd landslide-ai
 
-# 2. Create and activate a virtual environment (recommended)
+# Create and activate a virtual environment
 python -m venv .venv
-source .venv/bin/activate       # macOS/Linux
-# Windows PowerShell: .\.venv\Scripts\Activate.ps1
+# Windows: .\.venv\Scripts\Activate.ps1
+# Mac/Linux: source .venv/bin/activate
 
-# 3. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 4. Start the backend from the repository root
+# Start the FastAPI backend
 python -m uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
+```
 
-# 5. In a second terminal, start the Next.js dashboard
+### 2. Setup Frontend (Next.js)
+Open a **second terminal**:
+```bash
 cd dashboard
 npm install
 npm run dev
 ```
+
 **Open in Browser:** `http://localhost:3000/`
 
-The Risk Screening sidebar includes an **Admin Portal** button. It opens the authenticated incident command center at `/admin.html`, where submitted citizen reports, verification status, authority queue state, and private evidence are managed. Admin access requires `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` in the backend environment.
-
-On Windows PowerShell, the backend and dashboard can be started together with:
-
+*(Optional)* On Windows PowerShell, you can start both servers together:
 ```powershell
 .\start_dashboard.ps1
 ```
-
-Keep both processes running while using the dashboard. The Next.js `/api/*` proxy forwards to the FastAPI backend on port `8000`.
-
-### 🌐 Instant Live Sharing (Ngrok)
-To temporarily share the running dashboard with judges or a mobile phone, open a second terminal:
-```bash
-# The FastAPI server must already be running on port 8000
-ngrok http 8000
-```
-
-Ngrok provides a temporary public HTTPS URL. Keep both the Uvicorn and Ngrok terminals open while sharing the demo. The URL may change when the tunnel is restarted.
 
 ## 🔌 API Endpoints (FastAPI)
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | `GET` | Serves the Progressive Web App UI |
-| `/alerts` | `GET` | Screening results for all 53 configured NER locations; live or simulation mode |
-| `/report` | `POST` | Submit an unverified citizen report with optional media |
-| `/reports` | `GET` | List stored citizen reports according to the API workflow |
+| `/` | `GET` | Serves the legacy UI / Health Check |
+| `/api/alerts` | `GET` | Screening results for all 53 NER locations; live or simulation mode |
+| `/api/report` | `POST` | Submit an unverified citizen report with optional media |
 | `/docs` | `GET` | Interactive Swagger API documentation |
-
-## ✅ Features Completed for SIH Prototype
-
-- [x] 🤖 Terrain-aware Random Forest risk-screening model
-- [x] ⚡ Unified FastAPI backend serving static UI and JSON APIs
-- [x] 🌐 **Multilingual Engine** (English & Hindi localization)
-- [x] 🎥 **Media Uploads** (Support for High-Res Photos & MP4 Videos)
-- [x] 📶 **Progressive Web App (PWA)** with Offline Caching
-- [x] 🗺️ Interactive dashboard with map-based screening and incident workflows
-- [x] 📡 Multi-provider rainfall integration with source and freshness labels
 
 ## 🎯 Future Scope (Production Architecture)
 
 - Migrate to **PostgreSQL with PostGIS** for advanced spatial queries.
 - Implement **AWS S3** for scalable cloud storage of citizen media.
-- Train a **U-Net** deep learning model for automated crack detection in uploaded citizen videos.
+- Hardware integration with **Arduino/Raspberry Pi IoT Inclinometers** for live ground movement tracking.
 - Integrate **Redis** for massive scale SMS queue handling.
 
 ---

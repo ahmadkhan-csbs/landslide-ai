@@ -175,7 +175,7 @@ export default function Sidebar({ isOpen, onClose, stats, filters, onFilterChang
               <Map className="w-4 h-4" /> Reset Map View
             </button>
             <button onClick={() => setShowDroneOverlay(true)} className="w-full py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-green-900/50 transition-colors flex justify-center items-center gap-2">
-              <Scan className="w-4 h-4" /> Launch AI Drone Scan
+              <Scan className="w-4 h-4" /> Sentinel-2 Deforestation Scan
             </button>
             <button onClick={handleBroadcast} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-900/50 transition-colors flex justify-center items-center gap-2">
               <Mail className="w-4 h-4" /> Broadcast SMS/WhatsApp

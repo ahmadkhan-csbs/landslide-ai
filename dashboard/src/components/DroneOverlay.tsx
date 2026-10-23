@@ -39,14 +39,14 @@ export default function DroneOverlay({ onClose }: DroneOverlayProps) {
     fetchTarget();
   }, []);
 
-  const startSimulation = (data: any) => {
-    // Simulated Drone Startup & Scan Sequence using REAL DATA
+    const startSimulation = (data: any) => {
+    // Simulated Satellite Scan Sequence
     const sequence = [
-      { time: 500, log: "Uplink established. Signal strength: 98%" },
-      { time: 1500, log: `Routing drone to High-Risk Sector: ${data.name.toUpperCase()}` },
-      { time: 2500, log: `Target Coordinates: LAT ${data.lat.toFixed(4)} LON ${data.lon.toFixed(4)}` },
-      { time: 3500, log: "Initializing Optical & LiDAR sensors..." },
-      { time: 4500, log: "Commencing grid scan..." },
+      { time: 500, log: "Connecting to ESA Sentinel-2 API..." },
+      { time: 1500, log: `Fetching multispectral imagery for Sector: ${data.name.toUpperCase()}` },
+      { time: 2500, log: `Processing NDVI (Normalized Difference Vegetation Index)...` },
+      { time: 3500, log: "Calculating tree cover loss on steep slopes (>35°)..." },
+      { time: 4500, log: "Applying U-Net model to identify deforestation hotspots..." },
     ];
 
     sequence.forEach((s) => {
@@ -58,12 +58,12 @@ export default function DroneOverlay({ onClose }: DroneOverlayProps) {
         if (prev >= 100) {
           clearInterval(progressInterval);
           setTargetLocked(true);
-          setLogs((logs) => [...logs, `CRITICAL: ${data.main_reason} detected! Landslide probability ${data.risk.toFixed(1)}%.`]);
+          setLogs((logs) => [...logs, `CRITICAL: 84% Deforestation detected in last 6 months. Landslide vulnerability increased by 3.2x!`]);
           return 100;
         }
         return prev + 5;
       });
-    }, 250); // Slightly slower for dramatic effect
+    }, 250); 
   };
 
   if (!targetData) {
@@ -71,7 +71,7 @@ export default function DroneOverlay({ onClose }: DroneOverlayProps) {
       <div className="fixed inset-0 z-[100] bg-slate-950 flex items-center justify-center font-mono">
         <div className="flex flex-col items-center text-green-500 gap-4">
           <Loader2 className="w-8 h-8 animate-spin" />
-          <p>ESTABLISHING SECURE CONNECTION TO SATELLITE...</p>
+          <p>ESTABLISHING SECURE CONNECTION TO SENTINEL-2...</p>
         </div>
       </div>
     );
@@ -88,13 +88,12 @@ export default function DroneOverlay({ onClose }: DroneOverlayProps) {
         <div className="flex justify-between items-center px-6 py-4 border-b border-green-500/20 bg-green-950/10 text-green-500">
           <div className="flex items-center gap-4">
             <Video className="w-5 h-5 animate-pulse text-red-500" />
-            <span className="font-bold tracking-widest text-sm">REC</span>
-            <span className="text-xs border border-green-500/30 px-2 py-0.5 rounded opacity-70">UAV-DRONE-7A</span>
+            <span className="font-bold tracking-widest text-sm">LIVE FEED</span>
+            <span className="text-xs border border-green-500/30 px-2 py-0.5 rounded opacity-70">SENTINEL-2 ORBIT</span>
           </div>
           <div className="flex items-center gap-6 text-sm font-bold opacity-80">
             <span className="flex items-center gap-2"><Navigation className="w-4 h-4"/> LAT {targetData.lat.toFixed(4)} LON {targetData.lon.toFixed(4)}</span>
-            <span className="flex items-center gap-2"><Wifi className="w-4 h-4"/> 98%</span>
-            <span className="flex items-center gap-2"><Battery className="w-4 h-4"/> 82%</span>
+            <span className="flex items-center gap-2">BAND 4,8 (NDVI)</span>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-green-500/20 rounded-lg transition-colors z-50 relative cursor-pointer">
             <X className="w-6 h-6" />
