@@ -7,3 +7,4 @@ fastapi
 uvicorn
 requests
 pytest
+joblib
